@@ -2,73 +2,90 @@ use embedded_hal::serial::{Read, Write};
 use esp8266::{UART0, UART1};
 use void::Void;
 
-pub trait UARTExt<UART: UARTPeripheral> {
-    fn serial(self) -> Serial<UART>;
+pub trait UART0Ext {
+    fn serial(self) -> UART0Serial;
 }
 
-pub trait UARTPeripheral {
-    fn write(&mut self, word: u8) -> nb::Result<(), Void>;
-    fn flush(&mut self) -> nb::Result<(), Void>;
-    fn read(&mut self) -> nb::Result<u8, Void>;
-}
-
-macro_rules! uart_impl {
-    ($UART:ident) => {
-        impl UARTPeripheral for $UART {
-            fn write(&mut self, word: u8) -> nb::Result<(), Void> {
-                self.uart_fifo.write(|w| unsafe { w.bits(word as u32) });
-                Ok(())
-            }
-
-            /// Reads a single word from the serial interface
-            fn read(&mut self) -> nb::Result<u8, Void> {
-                let state = self.uart_status.read();
-                if state.rxfifo_cnt().bits() > 0 {
-                    Ok(self.uart_fifo.read().rxfifo_rd_byte().bits())
-                } else {
-                    Err(nb::Error::WouldBlock)
-                }
-            }
-
-            fn flush(&mut self) -> nb::Result<(), Void> {
-                // noop
-                Ok(())
-            }
-        }
-
-        impl UARTExt<$UART> for $UART {
-            fn serial(self) -> Serial<$UART> {
-                Serial { uart: self }
-            }
-        }
-    };
-}
-
-uart_impl!(UART0);
-uart_impl!(UART1);
-
-pub struct Serial<UART: UARTPeripheral> {
-    uart: UART,
-}
-
-impl<UART: UARTPeripheral> Write<u8> for Serial<UART> {
-    type Error = Void;
-
-    fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
-        self.uart.write(word)
-    }
-
-    fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        self.uart.flush()
+impl UART0Ext for UART0 {
+    fn serial(self) -> UART0Serial {
+        UART0Serial { uart: self }
     }
 }
 
-impl<UART: UARTPeripheral> Read<u8> for Serial<UART> {
-    /// Read error
+/// UART1 is write only
+pub trait UART1Ext {
+    fn serial(self) -> UART1Serial;
+}
+
+impl UART1Ext for UART1 {
+    fn serial(self) -> UART1Serial {
+        UART1Serial { uart: self }
+    }
+}
+
+pub struct UART0Serial {
+    uart: UART0,
+}
+
+impl Read<u8> for UART0Serial {
     type Error = Void;
 
     /// Reads a single word from the serial interface
     fn read(&mut self) -> nb::Result<u8, Self::Error> {
-        self.uart.read()
+        if self.uart.uart_status.read().rxfifo_cnt().bits() > 0 {
+            Ok(self.uart.uart_fifo.read().rxfifo_rd_byte().bits())
+        } else {
+            Err(nb::Error::WouldBlock)
+        }
+    }
+}
+
+impl Write<u8> for UART0Serial {
+    type Error = Void;
+
+    fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
+        if self.uart.uart_status.read().txfifo_cnt().bits() < 128 {
+            self.uart
+                .uart_fifo
+                .write(|w| unsafe { w.rxfifo_rd_byte().bits(word) });
+            Ok(())
+        } else {
+            Err(nb::Error::WouldBlock)
+        }
+    }
+
+    fn flush(&mut self) -> nb::Result<(), Void> {
+        if self.uart.uart_status.read().txfifo_cnt().bits() > 0 {
+            Err(nb::Error::WouldBlock)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+pub struct UART1Serial {
+    uart: UART1,
+}
+
+impl Write<u8> for UART1Serial {
+    type Error = Void;
+
+    fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
+        if self.uart.uart_status.read().txfifo_cnt().bits() < 128 {
+            self.uart
+                .uart_fifo
+                .write(|w| unsafe { w.rxfifo_rd_byte().bits(word) });
+            Ok(())
+        } else {
+            Err(nb::Error::WouldBlock)
+        }
+    }
+
+    fn flush(&mut self) -> nb::Result<(), Void> {
+        if self.uart.uart_status.read().txfifo_cnt().bits() > 0 {
+            Err(nb::Error::WouldBlock)
+        } else {
+            Ok(())
+        }
     }
 }
