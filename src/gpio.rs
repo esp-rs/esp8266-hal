@@ -136,22 +136,22 @@ macro_rules! impl_output {
 }
 
 impl_output! {
-    gpio_enable_w1ts, gpio_out_w1ts, gpio_out_w1tc, [
+    gpio_enable_w1ts, gpio_enable_w1tc, gpio_out_w1ts, gpio_out_w1tc, gpio_in, [
         Gpio0: (0, pin0, io_mux_gpio0, 0b00),
-        Gpio1: (1, pin1, io_mux_u0txd, 0b10),
+        Gpio1: (1, pin1, io_mux_u0txd, 0b11),
         Gpio2: (2, pin2, io_mux_gpio2, 0b00),
-        Gpio3: (3, pin3, io_mux_u0rxd, 0b10),
-        Gpio4: (4, pin4, io_mux_gpio4, 0b10),
-        Gpio5: (5, pin5, io_mux_gpio5, 0b10),
-        Gpio6: (6, pin6, io_mux_sd_clk, 0b10),
-        Gpio7: (7, pin7, io_mux_sd_data0, 0b10),
-        Gpio8: (8, pin8, io_mux_sd_data1, 0b10),
-        Gpio9: (9, pin9, io_mux_sd_data2, 0b10),
-        Gpio10: (10, pin10, io_mux_sd_data3, 0b10),
-        Gpio11: (11, pin11, io_mux_sd_cmd, 0b10),
-        Gpio12: (12, pin12, io_mux_mtdi, 0b10),
-        Gpio13: (13, pin13, io_mux_mtck, 0b10),
-        Gpio14: (14, pin14, io_mux_mtms, 0b10),
-        Gpio15: (15, pin15, io_mux_mtdo, 0b10),
+        Gpio3: (3, pin3, io_mux_u0rxd, 0b11),
+        Gpio4: (4, pin4, io_mux_gpio4, 0b00),
+        Gpio5: (5, pin5, io_mux_gpio5, 0b00),
+        Gpio6: (6, pin6, io_mux_sd_clk, 0b11),
+        Gpio7: (7, pin7, io_mux_sd_data0, 0b11),
+        Gpio8: (8, pin8, io_mux_sd_data1, 0b11),
+        Gpio9: (9, pin9, io_mux_sd_data2, 0b11),
+        Gpio10: (10, pin10, io_mux_sd_data3, 0b11),
+        Gpio11: (11, pin11, io_mux_sd_cmd, 0b11),
+        Gpio12: (12, pin12, io_mux_mtdi, 0b11),
+        Gpio13: (13, pin13, io_mux_mtck, 0b11),
+        Gpio14: (14, pin14, io_mux_mtms, 0b11),
+        Gpio15: (15, pin15, io_mux_mtdo, 0b11),
     ]
 }
