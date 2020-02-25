@@ -1,8 +1,8 @@
-use core::marker::PhantomData;
 use core::convert::Infallible;
+use core::marker::PhantomData;
 
+use embedded_hal::digital::v2::{InputPin, OutputPin};
 use esp8266::{GPIO, IO_MUX};
-use embedded_hal::digital::v2::OutputPin;
 
 /// Extension trait to split a GPIO peripheral in independent pins and registers
 pub trait GpioExt {
@@ -100,7 +100,7 @@ gpio! {
 }
 
 macro_rules! impl_output {
-    ($en:ident, $outs:ident, $outc:ident, [
+    ($en:ident, $dis:ident, $outs:ident, $outc:ident, $in:ident, [
         // index, gpio pin name, funcX name, iomux pin name, iomux mcu_sel bits
         $($pxi:ident: ($i:expr, $pin:ident, $iomux:ident, $mcu_sel_bits:expr),)+
     ]) => {
@@ -121,13 +121,59 @@ macro_rules! impl_output {
                 }
             }
 
+            impl<MODE> InputPin for $pxi<Input<MODE>> {
+                type Error = Infallible;
+
+                fn is_high(&self) -> Result<bool, Self::Error> {
+                    let input = unsafe { (*GPIO::ptr()).$in.read().gpio_in_data().bits() };
+                    Ok((input >> $i) & 1 == 1)
+                }
+
+                fn is_low(&self) -> Result<bool, Self::Error> {
+                    let input = unsafe { (*GPIO::ptr()).$in.read().gpio_in_data().bits() };
+                    Ok((input >> $i) & 1 == 0)
+                }
+            }
+
             impl<MODE> $pxi<MODE> {
                 pub fn into_push_pull_output(self) -> $pxi<Output<PushPull>> {
                     let gpio = unsafe{ &*GPIO::ptr() };
                     let iomux = unsafe{ &*IO_MUX::ptr() };
-                    gpio.$en.modify(|_, w| unsafe  { w.bits(0x1 << $i) });
+                    iomux.$iomux.modify(|_, w| unsafe {
+                        w.function_select_low_bits().bits($mcu_sel_bits & 0b11)
+                        .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
+                    });
 
-                    iomux.$iomux.modify(|_, w| unsafe { w.bits($mcu_sel_bits) });
+                    gpio.$en.modify(|_, w| unsafe { w.bits(0x1 << $i) });
+
+                    $pxi { _mode: PhantomData }
+                }
+
+                pub fn into_floating_input(self) -> $pxi<Input<Floating>> {
+                    let gpio = unsafe{ &*GPIO::ptr() };
+                    let iomux = unsafe{ &*IO_MUX::ptr() };
+                    iomux.$iomux.modify(|_, w| unsafe {
+                        w.function_select_low_bits().bits($mcu_sel_bits & 0b11)
+                        .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
+                        .pullup().clear_bit()
+                    });
+
+                    gpio.$dis.modify(|_, w| unsafe { w.bits(0x1 << $i) });
+
+                    $pxi { _mode: PhantomData }
+                }
+
+                pub fn into_pull_up_input(self) -> $pxi<Input<PullUp>> {
+                    let gpio = unsafe{ &*GPIO::ptr() };
+                    let iomux = unsafe{ &*IO_MUX::ptr() };
+                    iomux.$iomux.modify(|_, w| unsafe {
+                        w.function_select_low_bits().bits($mcu_sel_bits & 0b11)
+                        .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
+                        .pullup().set_bit()
+                    });
+
+                    gpio.$dis.modify(|_, w| unsafe { w.bits(0x1 << $i) });
+
                     $pxi { _mode: PhantomData }
                 }
             }
