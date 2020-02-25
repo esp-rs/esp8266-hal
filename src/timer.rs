@@ -1,5 +1,5 @@
-use embedded_hal::timer::CountDown;
-use esp8266::timer::frc1_ctrl::PRESCALE_DIVIDER_A;
+use embedded_hal::timer::{Cancel, CountDown, Periodic};
+use esp8266::timer::frc1_ctrl::{INTERRUPT_TYPE_A, PRESCALE_DIVIDER_A};
 use esp8266::TIMER;
 use void::Void;
 
@@ -18,8 +18,6 @@ impl TimerExt for TIMER {
 
 pub struct Timer {
     timer: TIMER,
-    start: u32,
-    ticks: u32,
     ticks_per_ms: u32,
 }
 
@@ -30,14 +28,14 @@ impl Timer {
                 .set_bit()
                 .timer_enable()
                 .set_bit()
+                .interrupt_type()
+                .level()
                 .prescale_divider()
-                .variant(PRESCALE_DIVIDER_A::DEVIDED_BY_256)
+                .devided_by_256()
         });
 
         Timer {
             timer,
-            start: 0,
-            ticks: 0,
             ticks_per_ms: (1_000_000_000 / (frequency / 256)),
         }
     }
@@ -52,16 +50,31 @@ impl CountDown for Timer {
     {
         let timeout: Nanoseconds = timeout.into();
 
-        // 3600 = 1e9 / (80MHz / 256)
-        self.ticks = (timeout.0 / self.ticks_per_ms) as u32;
-        self.start = self.timer.frc1_count.read().bits();
+        let ticks = timeout.0 / self.ticks_per_ms;
+        self.timer.frc1_load.write(|w| unsafe { w.bits(ticks) });
     }
 
     fn wait(&mut self) -> nb::Result<(), Void> {
-        if (self.start - self.timer.frc1_count.read().bits() & 0x3fffff) < self.ticks {
+        if self.timer.frc1_ctrl.read().frc1_int().bit_is_clear() {
             Err(nb::Error::WouldBlock)
         } else {
+            self.timer
+                .frc1_int
+                .modify(|_, w| w.frc1_int_clr_mask().set_bit());
             Ok(())
         }
+    }
+}
+
+impl Periodic for Timer {}
+
+impl Cancel for Timer {
+    type Error = Void;
+
+    fn cancel(&mut self) -> Result<(), Self::Error> {
+        self.timer
+            .frc1_ctrl
+            .modify(|_, w| w.timer_enable().clear_bit());
+        Ok(())
     }
 }
