@@ -1,4 +1,5 @@
 use embedded_hal::timer::CountDown;
+use esp8266::timer::frc1_ctrl::PRESCALE_DIVIDER_A;
 use esp8266::TIMER;
 use void::Void;
 
@@ -24,11 +25,14 @@ pub struct Timer {
 
 impl Timer {
     fn new(timer: TIMER, frequency: u32) -> Self {
-        timer
-            .frc1_ctrl
-            .write(|w| unsafe { w.bits((1 << 7) | (1 << 6) | (2 << 2)) });
-        timer.frc1_load.write(|w| unsafe { w.bits(0x3fffff) });
-        timer.frc1_count.write(|w| unsafe { w.bits(0x3fffff) });
+        timer.frc1_ctrl.write(|w| {
+            w.rollover()
+                .set_bit()
+                .timer_enable()
+                .set_bit()
+                .prescale_divider()
+                .variant(PRESCALE_DIVIDER_A::DEVIDED_BY_256)
+        });
 
         Timer {
             timer,

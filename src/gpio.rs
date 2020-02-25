@@ -132,8 +132,7 @@ macro_rules! impl_output {
                 }
 
                 fn is_low(&self) -> Result<bool, Self::Error> {
-                    let input = unsafe { (*GPIO::ptr()).$in.read().gpio_in_data().bits() };
-                    Ok((input >> $i) & 1 == 0)
+                    Ok(!self.is_high()?)
                 }
             }
 
@@ -146,7 +145,7 @@ macro_rules! impl_output {
                         .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
                     });
 
-                    gpio.$en.modify(|_, w| unsafe { w.bits(0x1 << $i) });
+                    gpio.$en.write(|w| unsafe { w.bits(0x1 << $i) });
 
                     $pxi { _mode: PhantomData }
                 }
@@ -160,7 +159,7 @@ macro_rules! impl_output {
                         .pullup().clear_bit()
                     });
 
-                    gpio.$dis.modify(|_, w| unsafe { w.bits(0x1 << $i) });
+                    gpio.$dis.write(|w| unsafe { w.bits(0x1 << $i) });
 
                     $pxi { _mode: PhantomData }
                 }
@@ -174,7 +173,7 @@ macro_rules! impl_output {
                         .pullup().set_bit()
                     });
 
-                    gpio.$dis.modify(|_, w| unsafe { w.bits(0x1 << $i) });
+                    gpio.$dis.write(|w| unsafe { w.bits(0x1 << $i) });
 
                     $pxi { _mode: PhantomData }
                 }

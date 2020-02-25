@@ -47,7 +47,7 @@ impl Write<u8> for UART0Serial {
         if self.uart.uart_status.read().txfifo_cnt().bits() < 128 {
             self.uart
                 .uart_fifo
-                .write(|w| unsafe { w.rxfifo_rd_byte().bits(word) });
+                .write(|w| unsafe { w.rxfifo_write_byte().bits(word) });
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
@@ -74,7 +74,7 @@ impl Write<u8> for UART1Serial {
         if self.uart.uart_status.read().txfifo_cnt().bits() < 128 {
             self.uart
                 .uart_fifo
-                .write(|w| unsafe { w.rxfifo_rd_byte().bits(word) });
+                .write(|w| unsafe { w.rxfifo_write_byte().bits(word) });
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
