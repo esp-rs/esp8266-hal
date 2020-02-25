@@ -13,6 +13,9 @@ pub trait GpioExt {
     fn split(self) -> Self::Parts;
 }
 
+/// Uninitialized mode (type state)
+pub struct UnInitialized {}
+
 /// Input mode (type state)
 pub struct Input<MODE> {
     _mode: PhantomData<MODE>,
@@ -77,25 +80,24 @@ macro_rules! gpio {
     };
 }
 
-// All info on reset state pulled from 4.10 IO_MUX Pad List in the reference manual
 gpio! {
    GPIO: [
-       Gpio0: (gpio0, Input<PullUp>),
-       Gpio1: (gpio1, Input<PullUp>),
-       Gpio2: (gpio2, Input<PullDown>),
-       Gpio3: (gpio3, Input<PullUp>),
-       Gpio4: (gpio4, Input<PullDown>),
-       Gpio5: (gpio5, Input<PullUp>),
-       Gpio6: (gpio6, Input<PullUp>),
-       Gpio7: (gpio7, Input<PullUp>),
-       Gpio8: (gpio8, Input<PullUp>),
-       Gpio9: (gpio9, Input<PullUp>),
-       Gpio10: (gpio10, Input<PullUp>),
-       Gpio11: (gpio11, Input<PullUp>),
-       Gpio12: (gpio12, Input<PullDown>),
-       Gpio13: (gpio13, Input<Floating>),
-       Gpio14: (gpio14, Input<Floating>),
-       Gpio15: (gpio15, Input<PullUp>),
+       Gpio0: (gpio0, Input<UnInitialized>),
+       Gpio1: (gpio1, Input<UnInitialized>),
+       Gpio2: (gpio2, Input<UnInitialized>),
+       Gpio3: (gpio3, Input<UnInitialized>),
+       Gpio4: (gpio4, Input<UnInitialized>),
+       Gpio5: (gpio5, Input<UnInitialized>),
+       Gpio6: (gpio6, Input<UnInitialized>),
+       Gpio7: (gpio7, Input<UnInitialized>),
+       Gpio8: (gpio8, Input<UnInitialized>),
+       Gpio9: (gpio9, Input<UnInitialized>),
+       Gpio10: (gpio10, Input<UnInitialized>),
+       Gpio11: (gpio11, Input<UnInitialized>),
+       Gpio12: (gpio12, Input<UnInitialized>),
+       Gpio13: (gpio13, Input<UnInitialized>),
+       Gpio14: (gpio14, Input<UnInitialized>),
+       Gpio15: (gpio15, Input<UnInitialized>),
    ]
 }
 
