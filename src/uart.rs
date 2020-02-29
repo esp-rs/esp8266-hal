@@ -1,30 +1,74 @@
+use crate::gpio;
+use crate::gpio::UART;
 use embedded_hal::serial::{Read, Write};
 use esp8266::{UART0, UART1};
 use void::Void;
 
 pub trait UART0Ext {
-    fn serial(self) -> UART0Serial;
+    fn serial(
+        self,
+        tdx: gpio::Gpio1<UART>,
+        rxd: gpio::Gpio3<UART>,
+        cts: gpio::Gpio13<UART>,
+        rts: gpio::Gpio15<UART>,
+    ) -> UART0Serial;
 }
 
 impl UART0Ext for UART0 {
-    fn serial(self) -> UART0Serial {
-        UART0Serial { uart: self }
+    fn serial(
+        self,
+        txd: gpio::Gpio1<UART>,
+        rxd: gpio::Gpio3<UART>,
+        cts: gpio::Gpio13<UART>,
+        rts: gpio::Gpio15<UART>,
+    ) -> UART0Serial {
+        UART0Serial {
+            uart: self,
+            txd,
+            rxd,
+            cts,
+            rts,
+        }
     }
 }
 
 /// UART1 is write only
 pub trait UART1Ext {
-    fn serial(self) -> UART1Serial;
+    fn serial(self, txd: gpio::Gpio2<UART>) -> UART1Serial;
 }
 
 impl UART1Ext for UART1 {
-    fn serial(self) -> UART1Serial {
-        UART1Serial { uart: self }
+    fn serial(self, txd: gpio::Gpio2<UART>) -> UART1Serial {
+        UART1Serial { uart: self, txd }
     }
 }
 
 pub struct UART0Serial {
     uart: UART0,
+    txd: gpio::Gpio1<UART>,
+    rxd: gpio::Gpio3<UART>,
+    cts: gpio::Gpio13<UART>,
+    rts: gpio::Gpio15<UART>,
+}
+
+impl UART0Serial {
+    /// free up the uart device and return the pins used
+    ///
+    /// This operation blocks while there are still bytes in the transmit buffer
+    pub fn decompose(
+        mut self,
+    ) -> nb::Result<
+        (
+            gpio::Gpio1<UART>,
+            gpio::Gpio3<UART>,
+            gpio::Gpio13<UART>,
+            gpio::Gpio15<UART>,
+        ),
+        Void,
+    > {
+        self.flush()?;
+        Ok((self.txd, self.rxd, self.cts, self.rts))
+    }
 }
 
 impl Read<u8> for UART0Serial {
@@ -63,8 +107,20 @@ impl Write<u8> for UART0Serial {
     }
 }
 
+/// UART1 is a write only serial
 pub struct UART1Serial {
     uart: UART1,
+    txd: gpio::Gpio2<UART>,
+}
+
+impl UART1Serial {
+    /// free up the uart device and return the pins used
+    ///
+    /// This operation blocks while there are still bytes in the transmit buffer
+    pub fn decompose(mut self) -> nb::Result<gpio::Gpio2<UART>, Void> {
+        self.flush()?;
+        Ok(self.txd)
+    }
 }
 
 impl Write<u8> for UART1Serial {

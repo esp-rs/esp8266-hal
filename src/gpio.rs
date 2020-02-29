@@ -16,6 +16,9 @@ pub trait GpioExt {
 /// Uninitialized mode (type state)
 pub struct UnInitialized {}
 
+/// Pin is used by UART
+pub struct UART {}
+
 /// Input mode (type state)
 pub struct Input<MODE> {
     _mode: PhantomData<MODE>,
@@ -82,26 +85,26 @@ macro_rules! gpio {
 
 gpio! {
    GPIO: [
-       Gpio0: (gpio0, Input<UnInitialized>),
-       Gpio1: (gpio1, Input<UnInitialized>),
-       Gpio2: (gpio2, Input<UnInitialized>),
-       Gpio3: (gpio3, Input<UnInitialized>),
-       Gpio4: (gpio4, Input<UnInitialized>),
-       Gpio5: (gpio5, Input<UnInitialized>),
-       Gpio6: (gpio6, Input<UnInitialized>),
-       Gpio7: (gpio7, Input<UnInitialized>),
-       Gpio8: (gpio8, Input<UnInitialized>),
-       Gpio9: (gpio9, Input<UnInitialized>),
-       Gpio10: (gpio10, Input<UnInitialized>),
-       Gpio11: (gpio11, Input<UnInitialized>),
-       Gpio12: (gpio12, Input<UnInitialized>),
-       Gpio13: (gpio13, Input<UnInitialized>),
-       Gpio14: (gpio14, Input<UnInitialized>),
-       Gpio15: (gpio15, Input<UnInitialized>),
+       Gpio0: (gpio0, Input<Floating>),
+       Gpio1: (gpio1, UART),
+       Gpio2: (gpio2, Input<Floating>),
+       Gpio3: (gpio3, UART),
+       Gpio4: (gpio4, Input<Floating>),
+       Gpio5: (gpio5, Input<Floating>),
+       Gpio6: (gpio6, UnInitialized),
+       Gpio7: (gpio7, UnInitialized),
+       Gpio8: (gpio8, UnInitialized),
+       Gpio9: (gpio9, UnInitialized),
+       Gpio10: (gpio10, UnInitialized),
+       Gpio11: (gpio11, UnInitialized),
+       Gpio12: (gpio12, UnInitialized),
+       Gpio13: (gpio13, UART),
+       Gpio14: (gpio14, UnInitialized),
+       Gpio15: (gpio15, UART),
    ]
 }
 
-macro_rules! impl_output {
+macro_rules! impl_input_output {
     ($en:ident, $dis:ident, $outs:ident, $outc:ident, $in:ident, [
         // index, gpio pin name, funcX name, iomux pin name, iomux mcu_sel bits
         $($pxi:ident: ($i:expr, $pin:ident, $iomux:ident, $mcu_sel_bits:expr),)+
@@ -182,23 +185,58 @@ macro_rules! impl_output {
     };
 }
 
-impl_output! {
+impl_input_output! {
     gpio_enable_w1ts, gpio_enable_w1tc, gpio_out_w1ts, gpio_out_w1tc, gpio_in, [
-        Gpio0: (0, pin0, io_mux_gpio0, 0b00),
-        Gpio1: (1, pin1, io_mux_u0txd, 0b11),
-        Gpio2: (2, pin2, io_mux_gpio2, 0b00),
-        Gpio3: (3, pin3, io_mux_u0rxd, 0b11),
-        Gpio4: (4, pin4, io_mux_gpio4, 0b00),
-        Gpio5: (5, pin5, io_mux_gpio5, 0b00),
-        Gpio6: (6, pin6, io_mux_sd_clk, 0b11),
-        Gpio7: (7, pin7, io_mux_sd_data0, 0b11),
-        Gpio8: (8, pin8, io_mux_sd_data1, 0b11),
-        Gpio9: (9, pin9, io_mux_sd_data2, 0b11),
-        Gpio10: (10, pin10, io_mux_sd_data3, 0b11),
-        Gpio11: (11, pin11, io_mux_sd_cmd, 0b11),
-        Gpio12: (12, pin12, io_mux_mtdi, 0b11),
-        Gpio13: (13, pin13, io_mux_mtck, 0b11),
-        Gpio14: (14, pin14, io_mux_mtms, 0b11),
-        Gpio15: (15, pin15, io_mux_mtdo, 0b11),
+        Gpio0: (0, pin0, io_mux_gpio0, 0b000),
+        Gpio1: (1, pin1, io_mux_u0txd, 0b011),
+        Gpio2: (2, pin2, io_mux_gpio2, 0b000),
+        Gpio3: (3, pin3, io_mux_u0rxd, 0b011),
+        Gpio4: (4, pin4, io_mux_gpio4, 0b000),
+        Gpio5: (5, pin5, io_mux_gpio5, 0b000),
+        Gpio6: (6, pin6, io_mux_sd_clk, 0b011),
+        Gpio7: (7, pin7, io_mux_sd_data0, 0b011),
+        Gpio8: (8, pin8, io_mux_sd_data1, 0b011),
+        Gpio9: (9, pin9, io_mux_sd_data2, 0b011),
+        Gpio10: (10, pin10, io_mux_sd_data3, 0b011),
+        Gpio11: (11, pin11, io_mux_sd_cmd, 0b011),
+        Gpio12: (12, pin12, io_mux_mtdi, 0b011),
+        Gpio13: (13, pin13, io_mux_mtck, 0b011),
+        Gpio14: (14, pin14, io_mux_mtms, 0b011),
+        Gpio15: (15, pin15, io_mux_mtdo, 0b011),
+    ]
+}
+
+macro_rules! impl_uart {
+    ($dis:ident, [
+        // index, gpio pin name, funcX name, iomux pin name, iomux mcu_sel bits
+        $($pxi:ident: ($i:expr, $pin:ident, $iomux:ident, $mcu_sel_bits:expr),)+
+    ]) => {
+        $(
+            impl<MODE> $pxi<MODE> {
+                pub fn into_uart(self) -> $pxi<UART> {
+                    let gpio = unsafe{ &*GPIO::ptr() };
+                    let iomux = unsafe{ &*IO_MUX::ptr() };
+                    iomux.$iomux.modify(|_, w| unsafe {
+                        w.function_select_low_bits().bits($mcu_sel_bits & 0b11)
+                        .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
+                        .pullup().clear_bit()
+                    });
+
+                    gpio.$dis.write(|w| unsafe { w.bits(0x1 << $i) });
+
+                    $pxi { _mode: PhantomData }
+                }
+            }
+        )+
+    };
+}
+
+impl_uart! {
+    gpio_enable_w1tc, [
+        Gpio1: (1, pin1, io_mux_u0txd, 0b000),
+        Gpio2: (2, pin2, io_mux_gpio2, 0b010),
+        Gpio3: (3, pin3, io_mux_u0rxd, 0b000),
+        Gpio13: (13, pin13, io_mux_mtck, 0b000),
+        Gpio15: (15, pin15, io_mux_mtdo, 0b000),
     ]
 }
