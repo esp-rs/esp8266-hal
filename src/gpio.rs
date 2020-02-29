@@ -19,6 +19,18 @@ pub struct UnInitialized {}
 /// Pin is used by UART
 pub struct UART {}
 
+/// Pin is used by SDIO
+pub struct SDIO {}
+
+/// Pin is used by SPI
+pub struct SPI {}
+
+/// Pin is used by HSPI
+pub struct HSPI {}
+
+/// Pin is used by I2S
+pub struct I2S {}
+
 /// Input mode (type state)
 pub struct Input<MODE> {
     _mode: PhantomData<MODE>,
@@ -206,20 +218,20 @@ impl_input_output! {
     ]
 }
 
-macro_rules! impl_uart {
-    ($dis:ident, [
+macro_rules! impl_into_mode {
+    ($mode:ident, $func:ident, $dis:ident, [
         // index, gpio pin name, funcX name, iomux pin name, iomux mcu_sel bits
-        $($pxi:ident: ($i:expr, $pin:ident, $iomux:ident, $mcu_sel_bits:expr),)+
+        $($pxi:ident: ($i:expr, $iomux:ident, $mcu_sel_bits:literal, $pull_up:literal),)+
     ]) => {
         $(
             impl<MODE> $pxi<MODE> {
-                pub fn into_uart(self) -> $pxi<UART> {
+                pub fn $func(self) -> $pxi<$mode> {
                     let gpio = unsafe{ &*GPIO::ptr() };
                     let iomux = unsafe{ &*IO_MUX::ptr() };
                     iomux.$iomux.modify(|_, w| unsafe {
                         w.function_select_low_bits().bits($mcu_sel_bits & 0b11)
                         .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
-                        .pullup().clear_bit()
+                        .pullup().bit($pull_up)
                     });
 
                     gpio.$dis.write(|w| unsafe { w.bits(0x1 << $i) });
@@ -231,12 +243,55 @@ macro_rules! impl_uart {
     };
 }
 
-impl_uart! {
-    gpio_enable_w1tc, [
-        Gpio1: (1, pin1, io_mux_u0txd, 0b000),
-        Gpio2: (2, pin2, io_mux_gpio2, 0b010),
-        Gpio3: (3, pin3, io_mux_u0rxd, 0b000),
-        Gpio13: (13, pin13, io_mux_mtck, 0b000),
-        Gpio15: (15, pin15, io_mux_mtdo, 0b000),
+impl_into_mode! {
+    UART, into_uart, gpio_enable_w1tc, [
+        Gpio1: (1, io_mux_u0txd, 0b000, false),
+        Gpio2: (2, io_mux_gpio2, 0b010, false),
+        Gpio3: (3, io_mux_u0rxd, 0b000, false),
+        Gpio13: (13, io_mux_mtck, 0b000, false),
+        Gpio15: (15, io_mux_mtdo, 0b000, false),
+    ]
+}
+
+impl_into_mode! {
+    SDIO, into_sdio, gpio_enable_w1tc, [
+        Gpio6: (6, io_mux_sd_clk, 0b000, false),
+        Gpio7: (7, io_mux_sd_data0, 0b000, false),
+        Gpio8: (8, io_mux_sd_data1, 0b000, false),
+        Gpio9: (9, io_mux_sd_data2, 0b000, false),
+        Gpio10: (10, io_mux_sd_data3, 0b000, false),
+        Gpio11: (11, io_mux_sd_cmd, 0b000, false),
+    ]
+}
+
+impl_into_mode! {
+    SPI, into_spi, gpio_enable_w1tc, [
+        Gpio6: (6, io_mux_sd_clk, 0b001, true),
+        Gpio7: (7, io_mux_sd_data0, 0b001, true),
+        Gpio8: (8, io_mux_sd_data1, 0b001, true),
+        Gpio9: (9, io_mux_sd_data2, 0b001, false),
+        Gpio10: (10, io_mux_sd_data3, 0b001, false),
+        Gpio1: (1, io_mux_u0txd, 0b001, false),
+        Gpio0: (0, io_mux_gpio0, 0b001, false),
+    ]
+}
+
+impl_into_mode! {
+    HSPI, into_hspi, gpio_enable_w1tc, [
+        Gpio14: (14, io_mux_mtms, 0b010, true),
+        Gpio12: (12, io_mux_mtdi, 0b010, true),
+        Gpio13: (13, io_mux_mtck, 0b010, true),
+        Gpio15: (15, io_mux_mtdo, 0b010, true),
+    ]
+}
+
+impl_into_mode! {
+    I2S, into_i2s, gpio_enable_w1tc, [
+        Gpio12: (12, io_mux_mtdi, 0b001, false),
+        Gpio13: (13, io_mux_mtck, 0b001, false),
+        Gpio14: (14, io_mux_mtms, 0b001, false),
+        Gpio15: (15, io_mux_mtdo, 0b001, false),
+        Gpio3: (3, io_mux_u0rxd, 0b001, false),
+        Gpio2: (2, io_mux_gpio2, 0b001, false),
     ]
 }
