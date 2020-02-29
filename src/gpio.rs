@@ -1,7 +1,7 @@
 use core::convert::Infallible;
 use core::marker::PhantomData;
 
-use embedded_hal::digital::v2::{InputPin, OutputPin};
+use embedded_hal::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
 use esp8266::{GPIO, IO_MUX};
 
 /// Extension trait to split a GPIO peripheral in independent pins and registers
@@ -150,6 +150,18 @@ macro_rules! impl_input_output {
                     Ok(!self.is_high()?)
                 }
             }
+
+            impl<MODE> StatefulOutputPin for $pxi<Output<MODE>> {
+               fn is_set_high(&self) -> Result<bool, Self::Error> {
+                   let input = unsafe { (*GPIO::ptr()).$in.read().gpio_in_data().bits() };
+                    Ok((input >> $i) & 1 == 1)
+               }
+               fn is_set_low(&self) -> Result<bool, Self::Error> {
+                   Ok(!self.is_set_high()?)
+               }
+            }
+
+            impl<MODE> toggleable::Default for $pxi<Output<MODE>> {}
 
             impl<MODE> $pxi<MODE> {
                 pub fn into_push_pull_output(self) -> $pxi<Output<PushPull>> {
