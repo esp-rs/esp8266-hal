@@ -119,7 +119,7 @@ gpio! {
 macro_rules! impl_input_output {
     ($en:ident, $dis:ident, $outs:ident, $outc:ident, $in:ident, [
         // index, gpio pin name, funcX name, iomux pin name, iomux mcu_sel bits
-        $($pxi:ident: ($i:expr, $pin:ident, $iomux:ident, $mcu_sel_bits:expr),)+
+        $($pxi:ident: ($i:expr, $pin:ident, $iomux:ident, $mcu_sel_bits:expr, $driver:ident),)+
     ]) => {
         $(
             impl<MODE> OutputPin for $pxi<Output<MODE>> {
@@ -164,43 +164,43 @@ macro_rules! impl_input_output {
             impl<MODE> toggleable::Default for $pxi<Output<MODE>> {}
 
             impl<MODE> $pxi<MODE> {
-                pub fn into_push_pull_output(self) -> $pxi<Output<PushPull>> {
-                    let gpio = unsafe{ &*GPIO::ptr() };
-                    let iomux = unsafe{ &*IO_MUX::ptr() };
-                    iomux.$iomux.modify(|_, w| unsafe {
-                        w.function_select_low_bits().bits($mcu_sel_bits & 0b11)
-                        .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
+                unsafe fn configure_gpio(&mut self, mode: u8, enable: bool, pullup: bool, open_drain: bool) {
+                    let gpio = &*GPIO::ptr();
+                    let iomux = &*IO_MUX::ptr();
+                    iomux.$iomux.modify(|_, w| {
+                        w.function_select_low_bits().bits(mode & 0b11)
+                        .function_select_high_bit().bit(mode >> 2 == 1)
+                        .pullup().bit(pullup)
                     });
 
-                    gpio.$en.write(|w| unsafe { w.bits(0x1 << $i) });
+                    if enable {
+                        gpio.$en.write(|w| w.bits(0x1 << $i));
+                    } else {
+                        gpio.$dis.write(|w| w.bits(0x1 << $i));
+                    }
+
+                    gpio.$pin.modify(|_, w| w.$driver().bit(open_drain));
+                }
+
+                pub fn into_push_pull_output(mut self) -> $pxi<Output<PushPull>> {
+                    unsafe { self.configure_gpio($mcu_sel_bits, true, false, false) };
+
+                    $pxi { _mode: PhantomData }
+                }
+                pub fn into_open_drain_output(mut self) -> $pxi<Output<OpenDrain>> {
+                    unsafe { self.configure_gpio($mcu_sel_bits, true, false, true) };
 
                     $pxi { _mode: PhantomData }
                 }
 
-                pub fn into_floating_input(self) -> $pxi<Input<Floating>> {
-                    let gpio = unsafe{ &*GPIO::ptr() };
-                    let iomux = unsafe{ &*IO_MUX::ptr() };
-                    iomux.$iomux.modify(|_, w| unsafe {
-                        w.function_select_low_bits().bits($mcu_sel_bits & 0b11)
-                        .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
-                        .pullup().clear_bit()
-                    });
-
-                    gpio.$dis.write(|w| unsafe { w.bits(0x1 << $i) });
+                pub fn into_floating_input(mut self) -> $pxi<Input<Floating>> {
+                    unsafe { self.configure_gpio($mcu_sel_bits, false, false, false) };
 
                     $pxi { _mode: PhantomData }
                 }
 
-                pub fn into_pull_up_input(self) -> $pxi<Input<PullUp>> {
-                    let gpio = unsafe{ &*GPIO::ptr() };
-                    let iomux = unsafe{ &*IO_MUX::ptr() };
-                    iomux.$iomux.modify(|_, w| unsafe {
-                        w.function_select_low_bits().bits($mcu_sel_bits & 0b11)
-                        .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
-                        .pullup().set_bit()
-                    });
-
-                    gpio.$dis.write(|w| unsafe { w.bits(0x1 << $i) });
+                pub fn into_pull_up_input(mut self) -> $pxi<Input<PullUp>> {
+                    unsafe { self.configure_gpio($mcu_sel_bits, false, true, false) };
 
                     $pxi { _mode: PhantomData }
                 }
@@ -211,22 +211,22 @@ macro_rules! impl_input_output {
 
 impl_input_output! {
     gpio_enable_w1ts, gpio_enable_w1tc, gpio_out_w1ts, gpio_out_w1tc, gpio_in, [
-        Gpio0: (0, pin0, io_mux_gpio0, 0b000),
-        Gpio1: (1, pin1, io_mux_u0txd, 0b011),
-        Gpio2: (2, pin2, io_mux_gpio2, 0b000),
-        Gpio3: (3, pin3, io_mux_u0rxd, 0b011),
-        Gpio4: (4, pin4, io_mux_gpio4, 0b000),
-        Gpio5: (5, pin5, io_mux_gpio5, 0b000),
-        Gpio6: (6, pin6, io_mux_sd_clk, 0b011),
-        Gpio7: (7, pin7, io_mux_sd_data0, 0b011),
-        Gpio8: (8, pin8, io_mux_sd_data1, 0b011),
-        Gpio9: (9, pin9, io_mux_sd_data2, 0b011),
-        Gpio10: (10, pin10, io_mux_sd_data3, 0b011),
-        Gpio11: (11, pin11, io_mux_sd_cmd, 0b011),
-        Gpio12: (12, pin12, io_mux_mtdi, 0b011),
-        Gpio13: (13, pin13, io_mux_mtck, 0b011),
-        Gpio14: (14, pin14, io_mux_mtms, 0b011),
-        Gpio15: (15, pin15, io_mux_mtdo, 0b011),
+        Gpio0: (0, gpio_pin0, io_mux_gpio0, 0b000, gpio_pin0_driver),
+        Gpio1: (1, gpio_pin1, io_mux_u0txd, 0b011, gpio_pin1_driver),
+        Gpio2: (2, gpio_pin2, io_mux_gpio2, 0b000, gpio_pin2_driver),
+        Gpio3: (3, gpio_pin3, io_mux_u0rxd, 0b011, gpio_pin3_driver),
+        Gpio4: (4, gpio_pin4, io_mux_gpio4, 0b000, gpio_pin4_driver),
+        Gpio5: (5, gpio_pin5, io_mux_gpio5, 0b000, gpio_pin5_driver),
+        Gpio6: (6, gpio_pin6, io_mux_sd_clk, 0b011, gpio_pin6_driver),
+        Gpio7: (7, gpio_pin7, io_mux_sd_data0, 0b011, gpio_pin7_driver),
+        Gpio8: (8, gpio_pin8, io_mux_sd_data1, 0b011, gpio_pin8_driver),
+        Gpio9: (9, gpio_pin9, io_mux_sd_data2, 0b011, gpio_pin9_driver),
+        Gpio10: (10, gpio_pin10, io_mux_sd_data3, 0b011, gpio_pin10_driver),
+        Gpio11: (11, gpio_pin11, io_mux_sd_cmd, 0b011, gpio_pin11_driver),
+        Gpio12: (12, gpio_pin12, io_mux_mtdi, 0b011, gpio_pin12_driver),
+        Gpio13: (13, gpio_pin13, io_mux_mtck, 0b011, gpio_pin13_driver),
+        Gpio14: (14, gpio_pin14, io_mux_mtms, 0b011, gpio_pin14_driver),
+        Gpio15: (15, gpio_pin15, io_mux_mtdo, 0b011, gpio_pin15_driver),
     ]
 }
 
@@ -237,16 +237,8 @@ macro_rules! impl_into_mode {
     ]) => {
         $(
             impl<MODE> $pxi<MODE> {
-                pub fn $func(self) -> $pxi<$mode> {
-                    let gpio = unsafe{ &*GPIO::ptr() };
-                    let iomux = unsafe{ &*IO_MUX::ptr() };
-                    iomux.$iomux.modify(|_, w| unsafe {
-                        w.function_select_low_bits().bits($mcu_sel_bits & 0b11)
-                        .function_select_high_bit().bit($mcu_sel_bits >> 2 == 1)
-                        .pullup().bit($pull_up)
-                    });
-
-                    gpio.$dis.write(|w| unsafe { w.bits(0x1 << $i) });
+                pub fn $func(mut self) -> $pxi<$mode> {
+                    unsafe { self.configure_gpio($mcu_sel_bits, false, $pull_up, false) };
 
                     $pxi { _mode: PhantomData }
                 }
