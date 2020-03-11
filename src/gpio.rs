@@ -151,6 +151,19 @@ macro_rules! impl_input_output {
                 }
             }
 
+            impl InputPin for $pxi<Output<OpenDrain>> {
+                type Error = Infallible;
+
+                fn is_high(&self) -> Result<bool, Self::Error> {
+                    let input = unsafe { (*GPIO::ptr()).$in.read().gpio_in_data().bits() };
+                    Ok((input >> $i) & 1 == 1)
+                }
+
+                fn is_low(&self) -> Result<bool, Self::Error> {
+                    Ok(!self.is_high()?)
+                }
+            }
+
             impl<MODE> StatefulOutputPin for $pxi<Output<MODE>> {
                fn is_set_high(&self) -> Result<bool, Self::Error> {
                    let input = unsafe { (*GPIO::ptr()).$in.read().gpio_in_data().bits() };
