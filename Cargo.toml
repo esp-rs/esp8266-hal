@@ -3,6 +3,10 @@ name = "esp8266-hal"
 version = "0.1.0"
 authors = ["Robin Appelman <robin@icewind.nl>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
+description = "An experimental hardware abstraction layer for the esp8266"
+repository = "https://github.com/esp-rs/esp8266-hal"
+readme = "README.md"
 
 [dependencies]
 esp8266 = "0.0.4"
