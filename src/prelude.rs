@@ -8,6 +8,8 @@
 //! This can be imported as use `esp8266_hal::prelude::*`.
 
 pub use crate::gpio::GpioExt;
+pub use crate::timer::TimerExt;
+pub use crate::uart::{UART0Ext, UART1Ext};
 
 pub use embedded_hal::digital::v2::InputPin as _;
 pub use embedded_hal::digital::v2::OutputPin as _;
