@@ -1,26 +1,34 @@
-use crate::gpio;
-use crate::gpio::UART;
+//! UART peripheral control.
+//!
+//! Implements the traits required for reading from and writing to a serial port.
+//!
+//! The ESP8266 has two UARTs available, `UART0` and `UART1`. `UART1` is write-only.
+
+use crate::gpio::*;
+
 use embedded_hal::serial::{Read, Write};
 use esp8266::{UART0, UART1};
 use void::Void;
 
+/// Extension trait for `UART0` for easily creating `UART0Serial` instances.
 pub trait UART0Ext {
     fn serial(
         self,
-        tdx: gpio::Gpio1<UART>,
-        rxd: gpio::Gpio3<UART>,
-        cts: gpio::Gpio13<UART>,
-        rts: gpio::Gpio15<UART>,
+        tdx: Gpio1<UART>,
+        rxd: Gpio3<UART>,
+        cts: Gpio13<UART>,
+        rts: Gpio15<UART>,
     ) -> UART0Serial;
 }
 
 impl UART0Ext for UART0 {
+    /// Create a new `UART0Serial` instance using the provided pins.
     fn serial(
         self,
-        txd: gpio::Gpio1<UART>,
-        rxd: gpio::Gpio3<UART>,
-        cts: gpio::Gpio13<UART>,
-        rts: gpio::Gpio15<UART>,
+        txd: Gpio1<UART>,
+        rxd: Gpio3<UART>,
+        cts: Gpio13<UART>,
+        rts: Gpio15<UART>,
     ) -> UART0Serial {
         UART0Serial {
             uart: self,
@@ -32,40 +40,36 @@ impl UART0Ext for UART0 {
     }
 }
 
-/// UART1 is write only
+/// Extension trait for `UART1` for easily creating `UART1Serial` instances.
+///
+/// Note that `UART1` is write-only.
 pub trait UART1Ext {
-    fn serial(self, txd: gpio::Gpio2<UART>) -> UART1Serial;
+    fn serial(self, txd: Gpio2<UART>) -> UART1Serial;
 }
 
 impl UART1Ext for UART1 {
-    fn serial(self, txd: gpio::Gpio2<UART>) -> UART1Serial {
+    /// Create a new write-only `UART1Serial` instance using the provided pin.
+    fn serial(self, txd: Gpio2<UART>) -> UART1Serial {
         UART1Serial { uart: self, txd }
     }
 }
 
+/// Serial port using `UART0`.
 pub struct UART0Serial {
     uart: UART0,
-    txd: gpio::Gpio1<UART>,
-    rxd: gpio::Gpio3<UART>,
-    cts: gpio::Gpio13<UART>,
-    rts: gpio::Gpio15<UART>,
+    txd: Gpio1<UART>,
+    rxd: Gpio3<UART>,
+    cts: Gpio13<UART>,
+    rts: Gpio15<UART>,
 }
 
 impl UART0Serial {
-    /// free up the uart device and return the pins used
+    /// Free up the UART device and return the pins used.
     ///
-    /// This operation blocks while there are still bytes in the transmit buffer
+    /// This operation blocks while there are still bytes in the transmit buffer.
     pub fn decompose(
         mut self,
-    ) -> nb::Result<
-        (
-            gpio::Gpio1<UART>,
-            gpio::Gpio3<UART>,
-            gpio::Gpio13<UART>,
-            gpio::Gpio15<UART>,
-        ),
-        Void,
-    > {
+    ) -> nb::Result<(Gpio1<UART>, Gpio3<UART>, Gpio13<UART>, Gpio15<UART>), Void> {
         self.flush()?;
         Ok((self.txd, self.rxd, self.cts, self.rts))
     }
@@ -74,7 +78,7 @@ impl UART0Serial {
 impl Read<u8> for UART0Serial {
     type Error = Void;
 
-    /// Reads a single word from the serial interface
+    /// Reads a single word from the serial interface.
     fn read(&mut self) -> nb::Result<u8, Self::Error> {
         if self.uart.uart_status.read().rxfifo_cnt().bits() > 0 {
             Ok(self.uart.uart_fifo.read().rxfifo_rd_byte().bits())
@@ -107,17 +111,26 @@ impl Write<u8> for UART0Serial {
     }
 }
 
-/// UART1 is a write only serial
+impl core::fmt::Write for UART0Serial {
+    fn write_str(&mut self, s: &str) -> Result<(), core::fmt::Error> {
+        s.as_bytes()
+            .iter()
+            .try_for_each(|c| nb::block!(self.write(*c)))
+            .map_err(|_| core::fmt::Error)
+    }
+}
+
+/// Write-only serial port using `UART1`.
 pub struct UART1Serial {
     uart: UART1,
-    txd: gpio::Gpio2<UART>,
+    txd: Gpio2<UART>,
 }
 
 impl UART1Serial {
-    /// free up the uart device and return the pins used
+    /// Free up the UART device and return the pins used.
     ///
-    /// This operation blocks while there are still bytes in the transmit buffer
-    pub fn decompose(mut self) -> nb::Result<gpio::Gpio2<UART>, Void> {
+    /// This operation blocks while there are still bytes in the transmit buffer.
+    pub fn decompose(mut self) -> nb::Result<Gpio2<UART>, Void> {
         self.flush()?;
         Ok(self.txd)
     }
@@ -143,5 +156,14 @@ impl Write<u8> for UART1Serial {
         } else {
             Ok(())
         }
+    }
+}
+
+impl core::fmt::Write for UART1Serial {
+    fn write_str(&mut self, s: &str) -> Result<(), core::fmt::Error> {
+        s.as_bytes()
+            .iter()
+            .try_for_each(|c| nb::block!(self.write(*c)))
+            .map_err(|_| core::fmt::Error)
     }
 }
