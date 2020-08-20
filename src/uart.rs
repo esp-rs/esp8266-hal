@@ -12,30 +12,16 @@ use void::Void;
 
 /// Extension trait for `UART0` for easily creating `UART0Serial` instances.
 pub trait UART0Ext {
-    fn serial(
-        self,
-        tdx: Gpio1<UART>,
-        rxd: Gpio3<UART>,
-        cts: Gpio13<UART>,
-        rts: Gpio15<UART>,
-    ) -> UART0Serial;
+    fn serial(self, tdx: Gpio1<UART>, rxd: Gpio3<UART>) -> UART0Serial;
 }
 
 impl UART0Ext for UART0 {
     /// Create a new `UART0Serial` instance using the provided pins.
-    fn serial(
-        self,
-        txd: Gpio1<UART>,
-        rxd: Gpio3<UART>,
-        cts: Gpio13<UART>,
-        rts: Gpio15<UART>,
-    ) -> UART0Serial {
+    fn serial(self, txd: Gpio1<UART>, rxd: Gpio3<UART>) -> UART0Serial {
         UART0Serial {
             uart: self,
             txd,
             rxd,
-            cts,
-            rts,
         }
     }
 }
@@ -59,19 +45,15 @@ pub struct UART0Serial {
     uart: UART0,
     txd: Gpio1<UART>,
     rxd: Gpio3<UART>,
-    cts: Gpio13<UART>,
-    rts: Gpio15<UART>,
 }
 
 impl UART0Serial {
     /// Free up the UART device and return the pins used.
     ///
     /// This operation blocks while there are still bytes in the transmit buffer.
-    pub fn decompose(
-        mut self,
-    ) -> nb::Result<(Gpio1<UART>, Gpio3<UART>, Gpio13<UART>, Gpio15<UART>), Void> {
+    pub fn decompose(mut self) -> nb::Result<(UART0, Gpio1<UART>, Gpio3<UART>), Void> {
         self.flush()?;
-        Ok((self.txd, self.rxd, self.cts, self.rts))
+        Ok((self.uart, self.txd, self.rxd))
     }
 }
 
@@ -130,9 +112,9 @@ impl UART1Serial {
     /// Free up the UART device and return the pins used.
     ///
     /// This operation blocks while there are still bytes in the transmit buffer.
-    pub fn decompose(mut self) -> nb::Result<Gpio2<UART>, Void> {
+    pub fn decompose(mut self) -> nb::Result<(UART1, Gpio2<UART>), Void> {
         self.flush()?;
-        Ok(self.txd)
+        Ok((self.uart, self.txd))
     }
 }
 
@@ -167,3 +149,6 @@ impl core::fmt::Write for UART1Serial {
             .map_err(|_| core::fmt::Error)
     }
 }
+
+impl embedded_hal::blocking::serial::write::Default<u8> for UART0Serial {}
+impl embedded_hal::blocking::serial::write::Default<u8> for UART1Serial {}
