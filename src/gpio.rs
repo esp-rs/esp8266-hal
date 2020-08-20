@@ -295,10 +295,10 @@ impl_into_mode! {
 
 impl_into_mode! {
     HSPI, into_hspi, gpio_enable_w1tc, [
-        Gpio14: (14, io_mux_mtms, 0b010, true),
-        Gpio12: (12, io_mux_mtdi, 0b010, true),
-        Gpio13: (13, io_mux_mtck, 0b010, true),
-        Gpio15: (15, io_mux_mtdo, 0b010, true),
+        Gpio12: (12, io_mux_mtdi, 0b010, false),
+        Gpio13: (13, io_mux_mtck, 0b010, false),
+        Gpio14: (14, io_mux_mtms, 0b010, false),
+        Gpio15: (15, io_mux_mtdo, 0b010, false),
     ]
 }
 
