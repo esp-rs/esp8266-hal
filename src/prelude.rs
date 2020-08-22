@@ -9,6 +9,7 @@
 
 pub use crate::gpio::GpioExt;
 pub use crate::spi::SPIExt;
+pub use crate::time::U32Ext;
 pub use crate::timer::TimerExt;
 pub use crate::uart::{UART0Ext, UART1Ext};
 
