@@ -1,3 +1,4 @@
+use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
 use esp8266::TIMER;
 use void::Void;
@@ -75,6 +76,19 @@ macro_rules! impl_timer {
                 let timer = unsafe { (&*TIMER::ptr()) };
                 timer.$ctrl.modify(|_, w| w.timer_enable().clear_bit());
                 Ok(())
+            }
+        }
+
+        impl DelayUs<u32> for $TIMER {
+            fn delay_us(&mut self, ms: u32) {
+                self.start(Nanoseconds(ms));
+                nb::block!(self.wait()).unwrap()
+            }
+        }
+
+        impl DelayMs<u32> for $TIMER {
+            fn delay_ms(&mut self, ms: u32) {
+                self.delay_us(ms * 1000_000);
             }
         }
     };
