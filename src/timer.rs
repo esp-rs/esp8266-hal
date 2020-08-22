@@ -1,17 +1,22 @@
+use crate::time::{Hertz, Nanoseconds};
+
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
 use esp8266::TIMER;
 use void::Void;
 
-#[derive(Clone, Copy)]
-pub struct Nanoseconds(pub u32);
-
 pub trait TimerExt {
-    fn timers(self, frequency: u32) -> (Timer1, Timer2);
+    fn timers<T>(self, frequency: T) -> (Timer1, Timer2)
+    where
+        T: Into<Hertz>;
 }
 
 impl TimerExt for TIMER {
-    fn timers(self, frequency: u32) -> (Timer1, Timer2) {
+    fn timers<T>(self, frequency: T) -> (Timer1, Timer2)
+    where
+        T: Into<Hertz>,
+    {
+        let frequency: Hertz = frequency.into();
         (Timer1::new(frequency), Timer2::new(frequency))
     }
 }
@@ -23,7 +28,10 @@ macro_rules! impl_timer {
         }
 
         impl $TIMER {
-            fn new(frequency: u32) -> Self {
+            fn new<T>(frequency: T) -> Self
+            where
+                T: Into<Hertz>,
+            {
                 let timer = unsafe { (&*TIMER::ptr()) };
                 timer.$ctrl.write(|w| {
                     w.rollover()
@@ -35,8 +43,9 @@ macro_rules! impl_timer {
                 });
                 timer.$alarm.write(|w| unsafe { w.bits(0) });
 
+                let frequency: Hertz = frequency.into();
                 $TIMER {
-                    ticks_per_ms: (1_000_000_000 / (frequency / 256)),
+                    ticks_per_ms: (1_000_000_000 / (frequency.0 / 256)),
                 }
             }
         }
@@ -88,7 +97,7 @@ macro_rules! impl_timer {
 
         impl DelayMs<u32> for $TIMER {
             fn delay_ms(&mut self, ms: u32) {
-                self.delay_us(ms * 1000_000);
+                self.delay_us(ms * 1_000_000);
             }
         }
     };
@@ -114,6 +123,7 @@ impl_timer!(
             timer1_load_value
         )
 );
+
 impl_timer!(
     Timer2:
         (

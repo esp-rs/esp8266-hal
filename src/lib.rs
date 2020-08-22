@@ -6,5 +6,6 @@ pub use esp8266 as target;
 pub mod gpio;
 pub mod prelude;
 pub mod spi;
+pub mod time;
 pub mod timer;
 pub mod uart;
