@@ -1,4 +1,4 @@
-use crate::time::{Hertz, Nanoseconds};
+use crate::time::{Hertz, Microseconds, Nanoseconds};
 
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
@@ -89,15 +89,15 @@ macro_rules! impl_timer {
         }
 
         impl DelayUs<u32> for $TIMER {
-            fn delay_us(&mut self, ms: u32) {
-                self.start(Nanoseconds(ms));
+            fn delay_us(&mut self, us: u32) {
+                self.start(Microseconds(us));
                 nb::block!(self.wait()).unwrap()
             }
         }
 
         impl DelayMs<u32> for $TIMER {
             fn delay_ms(&mut self, ms: u32) {
-                self.delay_us(ms * 1_000_000);
+                self.delay_us(ms * 1_000);
             }
         }
     };
