@@ -59,6 +59,16 @@ pub struct Output<MODE> {
     _mode: PhantomData<MODE>,
 }
 
+#[repr(u8)]
+pub enum InterruptMode {
+    Disabled = 0,
+    PositiveEdge = 1,
+    NegativeEdge = 2,
+    BothEdges = 3,
+    LowLevel = 4,
+    HighLevel = 5,
+}
+
 macro_rules! gpio {
     ($GPIO:ident: [
         $($pxi:ident: ($pname:ident, $MODE:ty),)+
@@ -119,7 +129,7 @@ gpio! {
 macro_rules! impl_input_output {
     ($en:ident, $dis:ident, $outs:ident, $outc:ident, $in:ident, [
         // index, gpio pin name, funcX name, iomux pin name, iomux mcu_sel bits
-        $($pxi:ident: ($i:expr, $pin:ident, $iomux:ident, $mcu_sel_bits:expr, $driver:ident),)+
+        $($pxi:ident: ($i:expr, $pin:ident, $iomux:ident, $mcu_sel_bits:expr, $driver:ident, $int:ident),)+
     ]) => {
         $(
             impl<MODE> OutputPin for $pxi<Output<MODE>> {
@@ -148,6 +158,13 @@ macro_rules! impl_input_output {
 
                 fn is_low(&self) -> Result<bool, Self::Error> {
                     Ok(!self.is_high()?)
+                }
+            }
+
+            impl<MODE> $pxi<Input<MODE>> {
+                pub fn set_interrupt_mode(&mut self, mode: InterruptMode) {
+                    let gpio = unsafe { &*GPIO::ptr() };
+                    gpio.$pin.modify(|_, w| unsafe { w.$int().bits(mode as u8) });
                 }
             }
 
@@ -224,22 +241,22 @@ macro_rules! impl_input_output {
 
 impl_input_output! {
     gpio_enable_w1ts, gpio_enable_w1tc, gpio_out_w1ts, gpio_out_w1tc, gpio_in, [
-        Gpio0: (0, gpio_pin0, io_mux_gpio0, 0b000, gpio_pin0_driver),
-        Gpio1: (1, gpio_pin1, io_mux_u0txd, 0b011, gpio_pin1_driver),
-        Gpio2: (2, gpio_pin2, io_mux_gpio2, 0b000, gpio_pin2_driver),
-        Gpio3: (3, gpio_pin3, io_mux_u0rxd, 0b011, gpio_pin3_driver),
-        Gpio4: (4, gpio_pin4, io_mux_gpio4, 0b000, gpio_pin4_driver),
-        Gpio5: (5, gpio_pin5, io_mux_gpio5, 0b000, gpio_pin5_driver),
-        Gpio6: (6, gpio_pin6, io_mux_sd_clk, 0b011, gpio_pin6_driver),
-        Gpio7: (7, gpio_pin7, io_mux_sd_data0, 0b011, gpio_pin7_driver),
-        Gpio8: (8, gpio_pin8, io_mux_sd_data1, 0b011, gpio_pin8_driver),
-        Gpio9: (9, gpio_pin9, io_mux_sd_data2, 0b011, gpio_pin9_driver),
-        Gpio10: (10, gpio_pin10, io_mux_sd_data3, 0b011, gpio_pin10_driver),
-        Gpio11: (11, gpio_pin11, io_mux_sd_cmd, 0b011, gpio_pin11_driver),
-        Gpio12: (12, gpio_pin12, io_mux_mtdi, 0b011, gpio_pin12_driver),
-        Gpio13: (13, gpio_pin13, io_mux_mtck, 0b011, gpio_pin13_driver),
-        Gpio14: (14, gpio_pin14, io_mux_mtms, 0b011, gpio_pin14_driver),
-        Gpio15: (15, gpio_pin15, io_mux_mtdo, 0b011, gpio_pin15_driver),
+        Gpio0: (0, gpio_pin0, io_mux_gpio0, 0b000, gpio_pin0_driver, gpio_pin0_int_type),
+        Gpio1: (1, gpio_pin1, io_mux_u0txd, 0b011, gpio_pin1_driver, gpio_pin1_int_type),
+        Gpio2: (2, gpio_pin2, io_mux_gpio2, 0b000, gpio_pin2_driver, gpio_pin2_int_type),
+        Gpio3: (3, gpio_pin3, io_mux_u0rxd, 0b011, gpio_pin3_driver, gpio_pin3_int_type),
+        Gpio4: (4, gpio_pin4, io_mux_gpio4, 0b000, gpio_pin4_driver, gpio_pin4_int_type),
+        Gpio5: (5, gpio_pin5, io_mux_gpio5, 0b000, gpio_pin5_driver, gpio_pin5_int_type),
+        Gpio6: (6, gpio_pin6, io_mux_sd_clk, 0b011, gpio_pin6_driver, gpio_pin6_int_type),
+        Gpio7: (7, gpio_pin7, io_mux_sd_data0, 0b011, gpio_pin7_driver, gpio_pin7_int_type),
+        Gpio8: (8, gpio_pin8, io_mux_sd_data1, 0b011, gpio_pin8_driver, gpio_pin8_int_type),
+        Gpio9: (9, gpio_pin9, io_mux_sd_data2, 0b011, gpio_pin9_driver, gpio_pin9_int_type),
+        Gpio10: (10, gpio_pin10, io_mux_sd_data3, 0b011, gpio_pin10_driver, gpio_pin10_int_type),
+        Gpio11: (11, gpio_pin11, io_mux_sd_cmd, 0b011, gpio_pin11_driver, gpio_pin11_int_type),
+        Gpio12: (12, gpio_pin12, io_mux_mtdi, 0b011, gpio_pin12_driver, gpio_pin12_int_type),
+        Gpio13: (13, gpio_pin13, io_mux_mtck, 0b011, gpio_pin13_driver, gpio_pin13_int_type),
+        Gpio14: (14, gpio_pin14, io_mux_mtms, 0b011, gpio_pin14_driver, gpio_pin14_int_type),
+        Gpio15: (15, gpio_pin15, io_mux_mtdo, 0b011, gpio_pin15_driver, gpio_pin15_int_type),
     ]
 }
 
