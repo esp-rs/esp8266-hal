@@ -51,6 +51,32 @@ impl From<StageTimeout> for Milliseconds {
 
 impl From<Milliseconds> for StageTimeout {
     fn from(ms: Milliseconds) -> StageTimeout {
+        StageTimeout::from_upper_bound(ms)
+    }
+}
+
+impl StageTimeout {
+    /// get the highest timeout that is less or equal to the provided time
+    fn from_lower_bound(ms: Milliseconds) -> StageTimeout {
+        if ms == StageTimeout::StageDisabled.into() {
+            StageTimeout::StageDisabled
+        } else if ms <= StageTimeout::Stage168Sec.into() {
+            StageTimeout::Stage084Sec
+        } else if ms <= StageTimeout::Stage336Sec.into() {
+            StageTimeout::Stage168Sec
+        } else if ms <= StageTimeout::Stage671Sec.into() {
+            StageTimeout::Stage336Sec
+        } else if ms <= StageTimeout::Stage1342Sec.into() {
+            StageTimeout::Stage671Sec
+        } else if ms <= StageTimeout::Stage2684Sec.into() {
+            StageTimeout::Stage1342Sec
+        } else {
+            StageTimeout::Stage2684Sec
+        }
+    }
+
+    /// get the lowest timeout that is more or equal to the provided time
+    fn from_upper_bound(ms: Milliseconds) -> StageTimeout {
         if ms == StageTimeout::StageDisabled.into() {
             StageTimeout::StageDisabled
         } else if ms <= StageTimeout::Stage084Sec.into() {
@@ -77,9 +103,9 @@ impl From<StageTimeout> for (StageTimeout, StageTimeout) {
 
 impl From<Milliseconds> for (StageTimeout, StageTimeout) {
     fn from(ms: Milliseconds) -> (StageTimeout, StageTimeout) {
-        let stage0 = StageTimeout::from(ms);
+        let stage0 = StageTimeout::from_lower_bound(ms);
         let stage1_ms = Milliseconds(ms.0.saturating_sub(Milliseconds::from(stage0).0));
-        let stage1 = StageTimeout::from(stage1_ms);
+        let stage1 = StageTimeout::from_upper_bound(stage1_ms);
 
         (stage0, stage1)
     }
@@ -104,11 +130,11 @@ fn test_time_into_timeout() {
         500.ms().into()
     );
     assert_eq!(
-        (StageTimeout::Stage168Sec, StageTimeout::StageDisabled),
+        (StageTimeout::Stage084Sec, StageTimeout::Stage084Sec),
         1500.ms().into()
     );
     assert_eq!(
-        (StageTimeout::Stage336Sec, StageTimeout::StageDisabled),
+        (StageTimeout::Stage168Sec, StageTimeout::Stage084Sec),
         2500.ms().into()
     );
     assert_eq!(
@@ -123,6 +149,26 @@ fn test_time_into_timeout() {
         (StageTimeout::Stage2684Sec, StageTimeout::Stage2684Sec),
         100000.ms().into()
     );
+}
+
+#[test]
+fn test_time_into_timeout_is_higher() {
+    use crate::time::U32Ext;
+
+    for period in (1..53680).step_by(100) {
+        let (stage0, stage1) = period.ms().into();
+
+        let sum_ms = Milliseconds::from(stage0).0 + Milliseconds::from(stage1).0;
+
+        assert!(
+            sum_ms >= period,
+            "converted period {} is not more than input time {}. stages: {:?}, {:?}",
+            sum_ms,
+            period,
+            stage0,
+            stage1
+        );
+    }
 }
 
 pub struct Watchdog {
