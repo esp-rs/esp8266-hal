@@ -3,37 +3,37 @@
 // Frequency based
 
 /// Bits per second
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub struct Bps(pub u32);
 
 /// Hertz
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub struct Hertz(pub u32);
 
 /// KiloHertz
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub struct KiloHertz(pub u32);
 
 /// MegaHertz
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub struct MegaHertz(pub u32);
 
 // Period based
 
 /// Seconds
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub struct Seconds(pub u32);
 
 /// Milliseconds
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub struct Milliseconds(pub u32);
 
 /// Microseconds
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub struct Microseconds(pub u32);
 
 /// Nanoseconds
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub struct Nanoseconds(pub u32);
 
 /// Extension trait that adds convenience methods to the `u32` type
@@ -103,143 +103,143 @@ impl U32Ext for u32 {
 
 // Frequency based
 
-impl Into<Hertz> for KiloHertz {
-    fn into(self) -> Hertz {
-        Hertz(self.0 * 1_000)
+impl From<KiloHertz> for Hertz {
+    fn from(from: KiloHertz) -> Hertz {
+        Hertz(from.0 * 1_000)
     }
 }
 
-impl Into<Hertz> for MegaHertz {
-    fn into(self) -> Hertz {
-        Hertz(self.0 * 1_000_000)
+impl From<MegaHertz> for Hertz {
+    fn from(from: MegaHertz) -> Hertz {
+        Hertz(from.0 * 1_000_000)
     }
 }
 
-impl Into<KiloHertz> for MegaHertz {
-    fn into(self) -> KiloHertz {
-        KiloHertz(self.0 * 1_000)
+impl From<MegaHertz> for KiloHertz {
+    fn from(from: MegaHertz) -> KiloHertz {
+        KiloHertz(from.0 * 1_000)
     }
 }
 
-impl Into<KiloHertz> for Hertz {
-    fn into(self) -> KiloHertz {
-        KiloHertz(self.0 / 1_000)
+impl From<Hertz> for KiloHertz {
+    fn from(from: Hertz) -> KiloHertz {
+        KiloHertz(from.0 / 1_000)
     }
 }
 
-impl Into<MegaHertz> for Hertz {
-    fn into(self) -> MegaHertz {
-        MegaHertz(self.0 / 1_000_000)
+impl From<Hertz> for MegaHertz {
+    fn from(from: Hertz) -> MegaHertz {
+        MegaHertz(from.0 / 1_000_000)
     }
 }
 
-impl Into<MegaHertz> for KiloHertz {
-    fn into(self) -> MegaHertz {
-        MegaHertz(self.0 / 1_000)
+impl From<KiloHertz> for MegaHertz {
+    fn from(from: KiloHertz) -> MegaHertz {
+        MegaHertz(from.0 / 1_000)
     }
 }
 
 // Period based
 
-impl Into<Milliseconds> for Seconds {
-    fn into(self) -> Milliseconds {
-        Milliseconds(self.0 * 1_000)
+impl From<Seconds> for Milliseconds {
+    fn from(from: Seconds) -> Milliseconds {
+        Milliseconds(from.0 * 1_000)
     }
 }
-impl Into<Microseconds> for Seconds {
-    fn into(self) -> Microseconds {
-        Microseconds(self.0 * 1_000_000)
-    }
-}
-
-impl Into<Nanoseconds> for Seconds {
-    fn into(self) -> Nanoseconds {
-        Nanoseconds(self.0 * 1_000_000_000)
+impl From<Seconds> for Microseconds {
+    fn from(from: Seconds) -> Microseconds {
+        Microseconds(from.0 * 1_000_000)
     }
 }
 
-impl Into<Microseconds> for Milliseconds {
-    fn into(self) -> Microseconds {
-        Microseconds(self.0 * 1_000)
+impl From<Seconds> for Nanoseconds {
+    fn from(from: Seconds) -> Nanoseconds {
+        Nanoseconds(from.0 * 1_000_000_000)
     }
 }
 
-impl Into<Nanoseconds> for Microseconds {
-    fn into(self) -> Nanoseconds {
-        Nanoseconds(self.0 * 1_000)
+impl From<Milliseconds> for Microseconds {
+    fn from(from: Milliseconds) -> Microseconds {
+        Microseconds(from.0 * 1_000)
     }
 }
 
-impl Into<Seconds> for Milliseconds {
-    fn into(self) -> Seconds {
-        Seconds(self.0 / 1_000)
+impl From<Microseconds> for Nanoseconds {
+    fn from(from: Microseconds) -> Nanoseconds {
+        Nanoseconds(from.0 * 1_000)
     }
 }
 
-impl Into<Seconds> for Microseconds {
-    fn into(self) -> Seconds {
-        Seconds(self.0 / 1_000_000)
+impl From<Milliseconds> for Seconds {
+    fn from(from: Milliseconds) -> Seconds {
+        Seconds(from.0 / 1_000)
     }
 }
 
-impl Into<Milliseconds> for Microseconds {
-    fn into(self) -> Milliseconds {
-        Milliseconds(self.0 / 1_000)
+impl From<Microseconds> for Seconds {
+    fn from(from: Microseconds) -> Seconds {
+        Seconds(from.0 / 1_000_000)
     }
 }
 
-impl Into<Nanoseconds> for Milliseconds {
-    fn into(self) -> Nanoseconds {
-        Nanoseconds(self.0 * 1_000_000)
+impl From<Microseconds> for Milliseconds {
+    fn from(from: Microseconds) -> Milliseconds {
+        Milliseconds(from.0 / 1_000)
+    }
+}
+
+impl From<Milliseconds> for Nanoseconds {
+    fn from(from: Milliseconds) -> Nanoseconds {
+        Nanoseconds(from.0 * 1_000_000)
     }
 }
 
 // Frequency <-> Period
 
-impl Into<Hertz> for Nanoseconds {
-    fn into(self) -> Hertz {
-        Hertz(1_000_000_000_u32 / self.0)
+impl From<Nanoseconds> for Hertz {
+    fn from(from: Nanoseconds) -> Hertz {
+        Hertz(1_000_000_000_u32 / from.0)
     }
 }
 
-impl Into<Hertz> for Microseconds {
-    fn into(self) -> Hertz {
-        Hertz(1_000_000_u32 / self.0)
+impl From<Microseconds> for Hertz {
+    fn from(from: Microseconds) -> Hertz {
+        Hertz(1_000_000_u32 / from.0)
     }
 }
 
-impl Into<KiloHertz> for Nanoseconds {
-    fn into(self) -> KiloHertz {
-        KiloHertz(1_000_000_u32 / self.0)
+impl From<Nanoseconds> for KiloHertz {
+    fn from(from: Nanoseconds) -> KiloHertz {
+        KiloHertz(1_000_000_u32 / from.0)
     }
 }
 
-impl Into<MegaHertz> for Nanoseconds {
-    fn into(self) -> MegaHertz {
-        MegaHertz(1_000_u32 / self.0)
+impl From<Nanoseconds> for MegaHertz {
+    fn from(from: Nanoseconds) -> MegaHertz {
+        MegaHertz(1_000_u32 / from.0)
     }
 }
 
-impl Into<Microseconds> for Hertz {
-    fn into(self) -> Microseconds {
-        Microseconds(1_000_000_u32 / self.0)
+impl From<Hertz> for Microseconds {
+    fn from(from: Hertz) -> Microseconds {
+        Microseconds(1_000_000_u32 / from.0)
     }
 }
 
-impl Into<Nanoseconds> for Hertz {
-    fn into(self) -> Nanoseconds {
-        Nanoseconds(1_000_000_000u32 / self.0)
+impl From<Hertz> for Nanoseconds {
+    fn from(from: Hertz) -> Nanoseconds {
+        Nanoseconds(1_000_000_000u32 / from.0)
     }
 }
 
-impl Into<Nanoseconds> for KiloHertz {
-    fn into(self) -> Nanoseconds {
-        Nanoseconds(1_000_000u32 / self.0)
+impl From<KiloHertz> for Nanoseconds {
+    fn from(from: KiloHertz) -> Nanoseconds {
+        Nanoseconds(1_000_000u32 / from.0)
     }
 }
 
-impl Into<Nanoseconds> for MegaHertz {
-    fn into(self) -> Nanoseconds {
-        Nanoseconds(1_000u32 / self.0)
+impl From<MegaHertz> for Nanoseconds {
+    fn from(from: MegaHertz) -> Nanoseconds {
+        Nanoseconds(1_000u32 / from.0)
     }
 }
