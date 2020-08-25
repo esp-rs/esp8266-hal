@@ -40,8 +40,11 @@ macro_rules! impl_timer {
                         .level()
                         .prescale_divider()
                         .devided_by_256()
+                        .timer_enable()
+                        .clear_bit()
                 });
                 timer.$alarm.write(|w| unsafe { w.bits(0) });
+                timer.$int.modify(|_, w| w.$clr_mask().set_bit());
 
                 let frequency: Hertz = frequency.into();
                 $TIMER {
@@ -63,6 +66,7 @@ macro_rules! impl_timer {
                 let ticks = timeout.0 / self.ticks_per_ms;
                 timer.$ctrl.modify(|_, w| w.timer_enable().set_bit());
                 timer.$load.write(|w| unsafe { w.bits($load_value(ticks)) });
+                timer.$int.modify(|_, w| w.$clr_mask().set_bit());
             }
 
             fn wait(&mut self) -> nb::Result<(), Void> {
