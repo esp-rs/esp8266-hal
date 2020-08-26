@@ -1,18 +1,23 @@
-use crate::time::{Hertz, Microseconds, Nanoseconds};
+use crate::time::{Hertz, MegaHertz, Microseconds, Nanoseconds};
 
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
 use esp8266::TIMER;
 use void::Void;
 
-pub trait TimerExt {
-    fn timers<T>(self, frequency: T) -> (Timer1, Timer2)
+pub trait TimerExt: Sized {
+    fn timers(self) -> (Timer1, Timer2) {
+        self.with_clock_frequency(MegaHertz(80))
+    }
+
+    /// Configure the timer with a non default clock frequency
+    fn with_clock_frequency<T>(self, frequency: T) -> (Timer1, Timer2)
     where
         T: Into<Hertz>;
 }
 
 impl TimerExt for TIMER {
-    fn timers<T>(self, frequency: T) -> (Timer1, Timer2)
+    fn with_clock_frequency<T>(self, frequency: T) -> (Timer1, Timer2)
     where
         T: Into<Hertz>,
     {
