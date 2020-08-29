@@ -224,7 +224,7 @@ macro_rules! impl_input_output {
                 /// Change the pin into a specific mode without doing any of the pin configuration
                 ///
                 /// This should only be used if you know the pin is already configured correctly
-                pub unsafe fn unsafe_info<T>(mut self) -> $pxi<T> {
+                pub unsafe fn unsafe_info<T>(self) -> $pxi<T> {
                     $pxi { _mode: PhantomData }
                 }
 
