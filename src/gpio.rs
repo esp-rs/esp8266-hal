@@ -221,6 +221,13 @@ macro_rules! impl_input_output {
                     gpio.$pin.modify(|_, w| w.$driver().bit(open_drain));
                 }
 
+                /// Change the pin into a specific mode without doing any of the pin configuration
+                ///
+                /// This should only be used if you know the pin is already configured correctly
+                pub unsafe fn unsafe_info<T>(mut self) -> $pxi<T> {
+                    $pxi { _mode: PhantomData }
+                }
+
                 pub fn into_push_pull_output(mut self) -> $pxi<Output<PushPull>> {
                     unsafe { self.configure_gpio($mcu_sel_bits, true, false, false) };
 
