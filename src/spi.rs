@@ -24,7 +24,7 @@ pub trait SPIExt {
         miso: Gpio12<HSPI>,
         mosi: Gpio13<HSPI>,
         frequency: SpiClock,
-    ) -> SPIMaster;
+    ) -> SPI1Master;
 }
 
 impl SPIExt for SPI1 {
@@ -34,19 +34,19 @@ impl SPIExt for SPI1 {
         miso: Gpio12<HSPI>,
         mosi: Gpio13<HSPI>,
         frequency: SpiClock,
-    ) -> SPIMaster {
-        SPIMaster::new(self, sclk, miso, mosi, frequency)
+    ) -> SPI1Master {
+        SPI1Master::new(self, sclk, miso, mosi, frequency)
     }
 }
 
-pub struct SPIMaster {
+pub struct SPI1Master {
     spi: SPI1,
     sclk: Gpio14<HSPI>,
     miso: Gpio12<HSPI>,
     mosi: Gpio13<HSPI>,
 }
 
-impl SPIMaster {
+impl SPI1Master {
     pub fn new(
         spi: SPI1,
         sclk: Gpio14<HSPI>,
@@ -54,7 +54,7 @@ impl SPIMaster {
         mosi: Gpio13<HSPI>,
         frequency: SpiClock,
     ) -> Self {
-        let mut spi = SPIMaster {
+        let mut spi = SPI1Master {
             spi,
             sclk,
             miso: miso.into_push_pull_output().into_hspi(),
@@ -136,7 +136,7 @@ impl SPIMaster {
     }
 }
 
-impl FullDuplex<u8> for SPIMaster {
+impl FullDuplex<u8> for SPI1Master {
     type Error = Void;
 
     fn read(&mut self) -> nb::Result<u8, Self::Error> {
@@ -161,6 +161,6 @@ impl FullDuplex<u8> for SPIMaster {
     }
 }
 
-impl embedded_hal::blocking::spi::write::Default<u8> for SPIMaster {}
+impl embedded_hal::blocking::spi::write::Default<u8> for SPI1Master {}
 
-impl embedded_hal::blocking::spi::transfer::Default<u8> for SPIMaster {}
+impl embedded_hal::blocking::spi::transfer::Default<u8> for SPI1Master {}
