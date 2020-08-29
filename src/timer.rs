@@ -2,7 +2,7 @@ use crate::time::{Hertz, MegaHertz, Microseconds, Nanoseconds};
 
 use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 use embedded_hal::timer::{Cancel, CountDown, Periodic};
-use esp8266::TIMER;
+use esp8266::{DPORT, TIMER};
 use void::Void;
 
 pub trait TimerExt: Sized {
@@ -110,6 +110,31 @@ macro_rules! impl_timer {
             }
         }
     };
+}
+
+impl Timer1 {
+    /// Enable edge interrupts for this timer
+    ///
+    /// Note that using `wait` on the timer in unreliable why interrupts are enabled
+    pub fn enable_interrupts(&self) {
+        let timer = unsafe { &*TIMER::ptr() };
+        let dport = unsafe { &*DPORT::ptr() };
+
+        timer.frc1_ctrl.modify(|_, w| w.interrupt_type().edge());
+        dport
+            .edge_int_enable
+            .modify(|_, w| w.timer1_edge_int_enable().set_bit());
+    }
+
+    pub fn disable_interrupts(&self) {
+        let timer = unsafe { &*TIMER::ptr() };
+        let dport = unsafe { &*DPORT::ptr() };
+
+        timer.frc1_ctrl.modify(|_, w| w.interrupt_type().level());
+        dport
+            .edge_int_enable
+            .modify(|_, w| w.timer1_edge_int_enable().clear_bit());
+    }
 }
 
 fn timer1_load_value(ticks: u32) -> u32 {
