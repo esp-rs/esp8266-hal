@@ -127,7 +127,7 @@ gpio! {
 }
 
 macro_rules! impl_input_output {
-    ($en:ident, $dis:ident, $outs:ident, $outc:ident, $in:ident, [
+    ($en:ident, $dis:ident, $outs:ident, $outc:ident, $in:ident, $int_status:ident, $int_clear:ident, [
         // index, gpio pin name, funcX name, iomux pin name, iomux mcu_sel bits
         $($pxi:ident: ($i:expr, $pin:ident, $iomux:ident, $mcu_sel_bits:expr, $driver:ident, $int:ident),)+
     ]) => {
@@ -165,6 +165,15 @@ macro_rules! impl_input_output {
                 pub fn set_interrupt_mode(&mut self, mode: InterruptMode) {
                     let gpio = unsafe { &*GPIO::ptr() };
                     gpio.$pin.modify(|_, w| unsafe { w.$int().bits(mode as u8) });
+                }
+
+                pub fn clear_interrupt(&mut self) {
+                    unsafe { (*GPIO::ptr()).$int_clear.write(|w| w.bits(1 << $i)) };
+                }
+
+                pub fn interrupt_status(&mut self) -> bool {
+                    let status = unsafe { (*GPIO::ptr()).$int_status.read().bits() };
+                    status & (1 << $i) > 0
                 }
             }
 
@@ -240,7 +249,7 @@ macro_rules! impl_input_output {
 }
 
 impl_input_output! {
-    gpio_enable_w1ts, gpio_enable_w1tc, gpio_out_w1ts, gpio_out_w1tc, gpio_in, [
+    gpio_enable_w1ts, gpio_enable_w1tc, gpio_out_w1ts, gpio_out_w1tc, gpio_in, gpio_status, gpio_status_w1tc, [
         Gpio0: (0, gpio_pin0, io_mux_gpio0, 0b000, gpio_pin0_driver, gpio_pin0_int_type),
         Gpio1: (1, gpio_pin1, io_mux_u0txd, 0b011, gpio_pin1_driver, gpio_pin1_int_type),
         Gpio2: (2, gpio_pin2, io_mux_gpio2, 0b000, gpio_pin2_driver, gpio_pin2_int_type),
