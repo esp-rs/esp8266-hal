@@ -12,7 +12,20 @@ readme = "README.md"
 esp8266 = "0.1.1"
 nb = "0.1.2"
 void = { version = "1.0.2", default-features = false }
+xtensa-lx106-rt = "0.1.0"
 
 [dependencies.embedded-hal]
 features = ["unproven"]
 version = "0.2.3"
+
+[profile.dev]
+lto = true
+incremental = false
+debug = false # debug adds frame pointers - which must be omitted
+codegen-units = 1
+
+[profile.release]
+lto = true
+incremental = false
+debug = false # debug adds frame pointers - which must be omitted
+codegen-units = 1
