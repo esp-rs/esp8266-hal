@@ -1,6 +1,6 @@
 [package]
 name = "esp8266-hal"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Robin Appelman <robin@icewind.nl>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -9,7 +9,7 @@ repository = "https://github.com/esp-rs/esp8266-hal"
 readme = "README.md"
 
 [dependencies]
-esp8266 = "0.1.0"
+esp8266 = "0.1.1"
 nb = "0.1.2"
 void = { version = "1.0.2", default-features = false }
 
