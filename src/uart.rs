@@ -158,90 +158,16 @@ impl embedded_hal::blocking::serial::write::Default<u8> for UART1Serial {}
 #[cfg(feature = "rt")]
 mod interrupt {
     use super::*;
-    use xtensa_lx106_rt::{interrupt, ExceptionContext};
-    use xtensa_lx106_rt::interrupt::{enable_interrupt, InterruptType};
-    use core::ops::{Deref, DerefMut};
-    use core::ptr::{null_mut, null};
-    use core::pin::Pin;
-    use core::marker::PhantomPinned;
-    use core::intrinsics::transmute;
 
-    impl UART0Serial {pub fn attach_interrupt<F: FnMut(&mut UART0Serial)>(self, f: F) -> Pin<UartInterruptHandler<F>> {
-            UartInterruptHandler::new(self, f)
-        }
-    }
+    int_handler!(UART => UartInterruptHandler(UART0Serial));
 
-    #[interrupt(uart)]
-    fn uart_interrupt(_frame: &ExceptionContext) {
-        // this is safe because the drop impl for the handler cleans up the pointers
-        unsafe {
-            if !TRAMPOLINE.is_null() {
-                let trampoline: fn(*mut ()) = transmute(TRAMPOLINE);
-                trampoline(HANDLER)
-            }
-        }
-    }
-
-    static mut TRAMPOLINE: *const () = null();
-    static mut HANDLER: *mut () = null_mut();
-
-    /// Uses the magic of monomorphization to "save" the type parameter for our interrupt handler
-    ///
-    /// Because a new version of this function will be compiled for every F, the function pointer
-    /// for a monomorphized version of this function will "remember" it's function pointer,
-    /// allowing us to cast the function pointer into a monomorphized interrupt handler.
-    fn trampoline<F: FnMut(&mut UART0Serial)>(handler: *mut ()) {
-        let handler: &mut UartInterruptHandler<F> = unsafe { transmute(handler) };
-        handler.call();
-    }
-
-    pub struct UartInterruptHandler<F: FnMut(&mut UART0Serial)> {
-        uart: UART0Serial,
-        f: F,
-        _pin: PhantomPinned,
-    }
-
-    impl<'a, F: FnMut(&mut UART0Serial)> UartInterruptHandler<F> {
-        fn new(uart: UART0Serial, f: F) -> Pin<Self> {
-            enable_interrupt(InterruptType::UART);
-            unsafe {
-                let handler = Pin::new_unchecked(UartInterruptHandler {
-                    uart,
-                    f,
-                    _pin: PhantomPinned,
-                });
-                TRAMPOLINE = trampoline::<F> as *const ();
-                HANDLER = transmute(&handler);
-                handler
-            }
-        }
-
-        fn call(&mut self) {
-            (self.f)(&mut self.uart);
-            self.uart.uart.uart_int_clr.write(|w| unsafe { w.bits(0xff) });
-        }
-    }
-
-    impl<F: FnMut(&mut UART0Serial)> Drop for UartInterruptHandler<F> {
-        fn drop(&mut self) {
-            unsafe {
-                TRAMPOLINE = null();
-                HANDLER = null_mut();
-            }
-        }
-    }
-
-    impl<F: FnMut(&mut UART0Serial)> Deref for UartInterruptHandler<F> {
-        type Target = UART0Serial;
-
-        fn deref(&self) -> &Self::Target {
-            &self.uart
-        }
-    }
-
-    impl<F: FnMut(&mut UART0Serial)> DerefMut for UartInterruptHandler<F> {
-        fn deref_mut(&mut self) -> &mut Self::Target {
-            &mut self.uart
+    impl UART0Serial {
+        #[must_use = "the interrupt handler must be kept in scope for the interrupt to be handled"]
+        pub fn attach_interrupt<F: FnMut(&mut UART0Serial)>(self, mut f: F) -> Pin<UartInterruptHandler<impl FnMut(&mut UART0Serial)>> {
+            UartInterruptHandler::new(self, move |serial: &mut UART0Serial| {
+                f(serial);
+                serial.uart.uart_int_clr.write(|w| unsafe { w.bits(0xff) });
+            })
         }
     }
 }

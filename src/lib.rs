@@ -6,6 +6,10 @@ pub use esp8266 as target;
 #[cfg(feature = "rt")]
 pub use xtensa_lx106_rt::entry;
 
+#[cfg(feature = "rt")]
+#[macro_use]
+mod interrupt;
+
 pub mod gpio;
 pub mod prelude;
 pub mod rng;
