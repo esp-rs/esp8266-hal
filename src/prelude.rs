@@ -14,6 +14,7 @@ pub use crate::time::U32Ext;
 pub use crate::timer::TimerExt;
 pub use crate::uart::{UART0Ext, UART1Ext};
 pub use crate::watchdog::WatchdogExt;
+pub use crate::entry;
 
 pub use embedded_hal::digital::v2::InputPin as _;
 pub use embedded_hal::digital::v2::OutputPin as _;

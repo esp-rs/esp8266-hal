@@ -1,8 +1,6 @@
 #![no_std]
 #![no_main]
 
-use xtensa_lx106_rt::entry;
-
 use core::panic::PanicInfo;
 use esp8266_hal::prelude::*;
 use esp8266_hal::target::Peripherals;
