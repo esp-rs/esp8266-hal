@@ -97,19 +97,28 @@ macro_rules! impl_timer {
             }
         }
 
-        impl DelayUs<u32> for $TIMER {
-            fn delay_us(&mut self, us: u32) {
-                self.start(Microseconds(us));
+        impl_timer_delay!($TIMER, i32);
+        impl_timer_delay!($TIMER, u32);
+        impl_timer_delay!($TIMER, u16);
+        impl_timer_delay!($TIMER, u8);
+    };
+}
+
+macro_rules! impl_timer_delay {
+    ($TIMER:ident, $ty:ty) => {
+        impl DelayUs<$ty> for $TIMER {
+            fn delay_us(&mut self, us: $ty) {
+                self.start(Microseconds(us as u32));
                 nb::block!(self.wait()).unwrap()
             }
         }
 
-        impl DelayMs<u32> for $TIMER {
-            fn delay_ms(&mut self, ms: u32) {
-                self.delay_us(ms * 1_000);
+        impl DelayMs<$ty> for $TIMER {
+            fn delay_ms(&mut self, ms: $ty) {
+                self.delay_us(ms as u32 * 1_000);
             }
         }
-    };
+    }
 }
 
 impl Timer1 {
