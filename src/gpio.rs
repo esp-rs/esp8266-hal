@@ -2,7 +2,7 @@ use core::convert::Infallible;
 use core::marker::PhantomData;
 
 use embedded_hal::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
-use esp8266::{GPIO, IO_MUX};
+use esp8266::{GPIO, IO_MUX, RTC};
 
 /// Extension trait to split a GPIO peripheral in independent pins and registers
 pub trait GpioExt {
@@ -123,6 +123,7 @@ gpio! {
        Gpio13: (gpio13, UART),
        Gpio14: (gpio14, UnInitialized),
        Gpio15: (gpio15, UART),
+       Gpio16: (gpio16, Input<Floating>),
    ]
 }
 
@@ -274,6 +275,116 @@ impl_input_output! {
         Gpio14: (14, gpio_pin14, io_mux_mtms, 0b011, gpio_pin14_driver, gpio_pin14_int_type),
         Gpio15: (15, gpio_pin15, io_mux_mtdo, 0b011, gpio_pin15_driver, gpio_pin15_int_type),
     ]
+}
+
+// GPIO16 is controlled by the RTC instead of the IOMUX, and supports limited
+// configurations. Because of this, we need to implement the relevant GPIO
+// traits specifically for this pin.
+//
+// The NodeMCU documentation states that GPIO16 cannot be used as an open-drain
+// output or for interrupts, so that functionality has been omitted.
+// https://nodemcu.readthedocs.io/en/dev/modules/gpio/
+
+impl<MODE> InputPin for Gpio16<Input<MODE>> {
+    type Error = Infallible;
+
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        let input = unsafe { (*RTC::ptr()).rtc_gpio_in_data.read().bits() };
+        Ok(input & 0x1 != 0)
+    }
+
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(!self.is_high()?)
+    }
+}
+
+impl<PushPull> OutputPin for Gpio16<Output<PushPull>> {
+    type Error = Infallible;
+
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        unsafe {
+            (*RTC::ptr())
+                .rtc_gpio_out
+                .modify(|r, w| w.bits(r.bits() | 0x1))
+        };
+        Ok(())
+    }
+
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        unsafe {
+            (*RTC::ptr())
+                .rtc_gpio_out
+                .modify(|r, w| w.bits(r.bits() & !0x1))
+        };
+        Ok(())
+    }
+}
+
+impl<PushPull> StatefulOutputPin for Gpio16<Output<PushPull>> {
+    fn is_set_high(&self) -> Result<bool, Self::Error> {
+        let input = unsafe { (*RTC::ptr()).rtc_gpio_out.read().bits() };
+        Ok(input & 0x1 != 0)
+    }
+
+    fn is_set_low(&self) -> Result<bool, Self::Error> {
+        Ok(!self.is_set_high()?)
+    }
+}
+
+impl<PushPull> toggleable::Default for Gpio16<Output<PushPull>> {}
+
+impl<MODE> Gpio16<MODE> {
+    unsafe fn configure_gpio(&mut self, output: bool, pulldown: bool) {
+        let rtc = &(*RTC::ptr());
+
+        // mux configuration for XPD_DCDC and rtc_gpio0 connection
+        rtc.pad_xpd_dcdc_conf.modify(|r, w| {
+            if pulldown {
+                w.bits(r.bits() & 0xffffffbc)
+            } else {
+                w.bits((r.bits() & 0xffffffbc) | 0x1)
+            }
+        });
+
+        // mux configuration for out enable
+        rtc.rtc_gpio_conf.modify(|r, w| w.bits(r.bits() & !0x1));
+
+        // output enable/disable
+        rtc.rtc_gpio_enable.modify(|r, w| {
+            if output {
+                w.bits(r.bits() | 0x1)
+            } else {
+                w.bits(r.bits() & !0x1)
+            }
+        });
+    }
+
+    /// Change the pin into a specific mode without doing any of the pin
+    /// configuration
+    ///
+    /// This should only be used if you know the pin is already configured
+    /// correctly
+    pub unsafe fn unsafe_info<T>(self) -> Gpio16<T> {
+        Gpio16 { _mode: PhantomData }
+    }
+
+    pub fn into_push_pull_output(mut self) -> Gpio16<Output<PushPull>> {
+        unsafe { self.configure_gpio(true, false) };
+
+        Gpio16 { _mode: PhantomData }
+    }
+
+    pub fn into_floating_input(mut self) -> Gpio16<Input<PullDown>> {
+        unsafe { self.configure_gpio(false, false) };
+
+        Gpio16 { _mode: PhantomData }
+    }
+
+    pub fn into_pull_down_input(mut self) -> Gpio16<Input<PullDown>> {
+        unsafe { self.configure_gpio(false, true) };
+
+        Gpio16 { _mode: PhantomData }
+    }
 }
 
 macro_rules! impl_into_mode {
