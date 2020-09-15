@@ -15,8 +15,14 @@ An example project using the crate can be found [here](https://github.com/icewin
 ```
 $ git clone https://github.com/MabezDev/rust-xtensa
 $ cd rust-xtensa
-$ ./configure --llvm-root=$HOME/llvm-project/llvm/build
+$ ./configure --experimental-targets=Xtens
 $ ./x.py build
+```
+
+- link the custom rust build into rustup
+
+```
+$ rustup toolchain link xtensa /path/to/rust-xtensa/build/x86_64-unknown-linux-gnu/stage1
 ```
 
 - install the xtensa-lx106-elf toolchain from the [espressif web site](https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/linux-setup.html).
@@ -27,33 +33,18 @@ $ tar -xzf ~/Downloads/xtensa-lx106-elf-linux64-1.22.0-100-ge567ec7-5.2.0.tar.gz
 $ PATH="$PATH:$HOME/esp/xtensa-lx106-elf/bin"
 ```
 
-- install xargo
+- install cargo-espflash
 
 ```
-$ cargo install xargo
+$ cargo install cargo-espflash
 ```
-
-- point xargo to your compiler
-
-```
-$ export XARGO_RUST_SRC=/path/to/rust-xtensa/src
-$ export RUSTC=/path/to/rust-xtensa/build/x86_64-unknown-linux-gnu/stage2/bin/rustc
-```
-
-- install esptool
-
-```
-$ pip install esptool
-```
-
-Once you have the xtensa rust compiler setup you'll need to point `xargo`
 
 ## Flashing the examples
 
 Once you have your rust compiler and toolchain bits setup you can flash the examples using
 
 ```
-$ ./flash_example <example>
+$ cargo +xtensa espflash --release --example blinky --tool cargo /dev/ttyUSB0
 ``` 
 
 ## License
