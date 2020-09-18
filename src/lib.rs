@@ -19,3 +19,4 @@ pub mod timer;
 pub mod uart;
 pub mod watchdog;
 pub mod dport;
+pub mod rtccntl;

@@ -16,6 +16,7 @@ pub use crate::uart::{UART0Ext, UART1Ext};
 pub use crate::watchdog::WatchdogExt;
 pub use crate::entry;
 pub use crate::dport::DPortExt;
+pub use crate::rtccntl::RtcControlExt;
 
 pub use embedded_hal::digital::v2::InputPin as _;
 pub use embedded_hal::digital::v2::OutputPin as _;
