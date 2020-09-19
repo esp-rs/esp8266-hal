@@ -155,7 +155,7 @@ impl embedded_hal::blocking::serial::write::Default<u8> for UART0Serial {}
 impl embedded_hal::blocking::serial::write::Default<u8> for UART1Serial {}
 
 
-#[cfg(feature = "rt")]
+#[cfg(all(feature = "rt", feature = "interrupt"))]
 mod interrupt {
     use super::*;
 
