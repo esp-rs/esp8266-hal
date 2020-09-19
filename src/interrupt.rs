@@ -47,6 +47,7 @@ extern "Rust" {
 }
 
 #[interrupt]
+#[link_section = ".rwtext"]
 fn interrupt_trampoline(level: u32, frame: Context) {
     let _ = level;
     let mask = xtensa_lx::interrupt::get();

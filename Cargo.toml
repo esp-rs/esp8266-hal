@@ -18,7 +18,7 @@ xtensa-lx = "0.3.0"
 paste = { version = "1.0", optional = true }
 
 [features]
-default = ["rt", "all_in_ram", "interrupt"]
+default = ["rt", "interrupt"]
 rt = ["xtensa-lx-rt"]
 # Place program completely in RAM (needed when e.g. using only ROM bootloader, or for debugging).
 all_in_ram = []

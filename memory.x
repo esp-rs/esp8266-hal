@@ -22,15 +22,8 @@ MEMORY
   dram_seg ( RW )        : ORIGIN = 0x3FFE8000, len = 0x14000 /* SRAM2+1; first 64kB used by BT if enable */
   reserved_for_boot_seg  : ORIGIN = 0x3FFDC200, len = 144k /* SRAM1; reserved for static ROM usage; can be used for heap */
 
-  /* external flash 
-     The 0x20 offset is a convenience for the app binary image generation.
-     Flash cache has 64KB pages. The .bin file which is flashed to the chip
-     has a 0x18 byte file header, and each segment has a 0x08 byte segment
-     header. Setting this offset makes it simple to meet the flash cache MMU's
-     constraint that (paddr % 64KB == vaddr % 64KB).)
-  */
-  irom_seg ( RX )        : ORIGIN = 0x400D0020, len = 3M - 0x20
-  drom_seg ( R )         : ORIGIN = 0x3F400020, len = 4M - 0x20
+  irom_seg ( RX )        : ORIGIN = 0x40210000, len = 0xfeff0
+  drom_seg ( R )         : ORIGIN = 0x3F400000, len = 4M - 0x20
 }
 
 /* map generic regions to output sections */
@@ -54,3 +47,5 @@ PROVIDE(__ccompare_interrupt = __default_interrupt);
 PROVIDE(__soft_interrupt = __default_interrupt);
 PROVIDE(__wdt_interrupt = __default_interrupt);
 PROVIDE(__timer1_interrupt = __default_interrupt);
+
+PROVIDE ( Cache_Read_Enable = 0x40004678 );

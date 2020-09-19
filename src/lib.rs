@@ -21,6 +21,11 @@ pub mod watchdog;
 pub mod dport;
 pub mod rtccntl;
 
+extern "C" {
+    // todo: replace this with a rust implementation
+    fn Cache_Read_Enable(map: u8, p: u8, v: u8);
+}
+
 /// Function handling ESP8266 specific initialization
 /// then calls original Reset function
 ///
@@ -30,7 +35,11 @@ pub mod rtccntl;
 #[cfg(feature = "rt")]
 #[doc(hidden)]
 #[no_mangle]
+#[link_section = ".rwtext"]
 pub unsafe extern "C" fn ESP8266Reset() -> ! {
+    // setup the flash memory mapping
+    Cache_Read_Enable(0, 0, 0);
+
     // configure the pll for the most common crystal frequency
     use rtccntl::{CrystalFrequency, RtcControlExt};
     use esp8266::Peripherals;
