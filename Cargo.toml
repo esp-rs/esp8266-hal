@@ -16,6 +16,7 @@ void = { version = "1.0.2", default-features = false }
 xtensa-lx-rt = { version = "0.5.0", optional = true, features = ["lx106"] }
 xtensa-lx = "0.3.0"
 paste = { version = "1.0", optional = true }
+esp8266-hal-proc-macros = { version = "=0.1.0", path = "procmacros" }
 
 [features]
 default = ["rt", "interrupt"]
@@ -35,3 +36,6 @@ lto = true
 incremental = false
 debug = false # debug adds frame pointers - which must be omitted
 codegen-units = 1
+
+[dev-dependencies]
+panic-halt = "0.2.0"

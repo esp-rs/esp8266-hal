@@ -24,10 +24,43 @@ MEMORY
 
   irom_seg ( RX )        : ORIGIN = 0x40210000, len = 0xfeff0
   drom_seg ( R )         : ORIGIN = 0x3F400000, len = 4M - 0x20
+
+  /* RTC memory */
+  rtc_seg(RW)  : ORIGIN = 0x60001000, len = 768
 }
 
 /* map generic regions to output sections */
 INCLUDE "alias.x"
+
+/* esp8266 specific regions */
+SECTIONS {
+  .rtc.text : {
+   . = ALIGN(4);
+    *(.rtc.literal .rtc.text .rtc.literal.* .rtc.text.*)
+  } > rtc_seg AT > RODATA
+
+  .rtc.data :
+  {
+    _rtc_data_start = ABSOLUTE(.);
+    . = ALIGN(4);
+    *(.rtc.data .rtc.data.*)
+    _rtc_data_end = ABSOLUTE(.);
+  } > rtc_seg AT > RODATA
+
+ .rtc.bss (NOLOAD) :
+  {
+    _rtc_bss_start = ABSOLUTE(.);
+    . = ALIGN(4);
+    *(.rtc.bss .rtc.bss.*)
+    _rtc_bss_end = ABSOLUTE(.);
+  } > rtc_seg
+
+ .rtc.noinit (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.rtc.noinit .rtc.noinit.*)
+  } > rtc_seg
+}
 
 _heap_end = ABSOLUTE(ORIGIN(dram_seg))+LENGTH(dram_seg)+LENGTH(reserved_for_boot_seg) - 2*STACK_SIZE;
 _text_heap_end = ABSOLUTE(ORIGIN(iram_seg)+LENGTH(iram_seg));

@@ -2,6 +2,7 @@
 
 pub use embedded_hal as ehal;
 pub use esp8266 as target;
+pub use esp8266_hal_proc_macros::{interrupt, ram};
 
 #[cfg(feature = "rt")]
 pub use xtensa_lx_rt::entry;
@@ -35,7 +36,7 @@ extern "C" {
 #[cfg(feature = "rt")]
 #[doc(hidden)]
 #[no_mangle]
-#[link_section = ".rwtext"]
+#[ram]
 pub unsafe extern "C" fn ESP8266Reset() -> ! {
     // setup the flash memory mapping
     Cache_Read_Enable(0, 0, 0);

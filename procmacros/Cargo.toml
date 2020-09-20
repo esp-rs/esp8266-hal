@@ -1,0 +1,21 @@
+  
+[package]
+authors = ["Robin Appelman <robin@icewind.nl>", "Arjan Mels <arjan@mels.email>"]
+categories = ["embedded", "no-std"]
+description = "Attributes re-exported in `esp8266-hal`"
+keywords = ["esp8266", "esp8266-hal", "runtime", "startup"]
+license = "MIT OR Apache-2.0"
+name = "esp8266-hal-proc-macros"
+repository = "https://github.com/esp-rs/esp8266-hal"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0"
+proc-macro2 = "1.0"
+darling = "0.10"
+syn = {version = "1.0", features = ["extra-traits", "full"]}
+
