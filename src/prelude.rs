@@ -14,7 +14,8 @@ pub use crate::time::U32Ext;
 pub use crate::timer::TimerExt;
 pub use crate::uart::{UART0Ext, UART1Ext};
 pub use crate::watchdog::WatchdogExt;
-pub use crate::entry;
+pub use xtensa_lx_rt::{entry, exception};
+pub use esp8266_hal_proc_macros::{interrupt, ram};
 pub use crate::dport::DPortExt;
 pub use crate::rtccntl::RtcControlExt;
 

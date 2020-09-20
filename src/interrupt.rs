@@ -1,6 +1,7 @@
 use core::intrinsics::transmute;
 use xtensa_lx_rt::exception::Context;
 use xtensa_lx_rt::interrupt;
+use crate::ram;
 
 #[repr(u8)]
 pub enum InterruptType {
@@ -18,21 +19,6 @@ impl InterruptType {
     const fn mask(self) -> u32 {
         1 << self as u8
     }
-
-    fn call(self, context: &Context) {
-        unsafe {
-            match self {
-                Self::SLC => __slc_interrupt(context),
-                Self::SPI => __spi_interrupt(context),
-                Self::GPIO => __gpio_interrupt(context),
-                Self::UART => __uart_interrupt(context),
-                Self::CCOMPARE => __ccompare_interrupt(context),
-                Self::SOFT => __soft_interrupt(context),
-                Self::WDT => __wdt_interrupt(context),
-                Self::TIMER1 => __timer1_interrupt(context),
-            }
-        }
-    }
 }
 
 extern "Rust" {
@@ -44,40 +30,59 @@ extern "Rust" {
     fn __soft_interrupt(context: &Context);
     fn __wdt_interrupt(context: &Context);
     fn __timer1_interrupt(context: &Context);
+
+    fn __slc_hal_interrupt(context: &Context);
+    fn __spi_hal_interrupt(context: &Context);
+    fn __gpio_hal_interrupt(context: &Context);
+    fn __uart_hal_interrupt(context: &Context);
+    fn __ccompare_hal_interrupt(context: &Context);
+    fn __soft_hal_interrupt(context: &Context);
+    fn __wdt_hal_interrupt(context: &Context);
+    fn __timer1_hal_interrupt(context: &Context);
 }
 
 #[interrupt]
-#[link_section = ".rwtext"]
+#[ram]
 fn interrupt_trampoline(level: u32, frame: Context) {
     let _ = level;
     let mask = xtensa_lx::interrupt::get();
     unsafe {
         xtensa_lx::interrupt::clear(mask);
     }
-    if InterruptType::SLC.mask() & mask > 0 {
-        InterruptType::SLC.call(&frame);
-    };
-    if InterruptType::SPI.mask() & mask > 0 {
-        InterruptType::SPI.call(&frame);
-    };
-    if InterruptType::GPIO.mask() & mask > 0 {
-        InterruptType::GPIO.call(&frame);
-    };
-    if InterruptType::UART.mask() & mask > 0 {
-        InterruptType::UART.call(&frame);
-    };
-    if InterruptType::CCOMPARE.mask() & mask > 0 {
-        InterruptType::CCOMPARE.call(&frame);
-    };
-    if InterruptType::SOFT.mask() & mask > 0 {
-        InterruptType::SOFT.call(&frame);
-    };
-    if InterruptType::WDT.mask() & mask > 0 {
-        InterruptType::WDT.call(&frame);
-    };
-    if InterruptType::TIMER1.mask() & mask > 0 {
-        InterruptType::TIMER1.call(&frame);
-    };
+    unsafe {
+        if InterruptType::SLC.mask() & mask > 0 {
+            __slc_interrupt(&frame);
+            __slc_hal_interrupt(&frame);
+        };
+        if InterruptType::SPI.mask() & mask > 0 {
+            __spi_interrupt(&frame);
+            __spi_hal_interrupt(&frame);
+        };
+        if InterruptType::GPIO.mask() & mask > 0 {
+            __gpio_interrupt(&frame);
+            __gpio_hal_interrupt(&frame);
+        };
+        if InterruptType::UART.mask() & mask > 0 {
+            __uart_interrupt(&frame);
+            __uart_hal_interrupt(&frame);
+        };
+        if InterruptType::CCOMPARE.mask() & mask > 0 {
+            __ccompare_interrupt(&frame);
+            __ccompare_hal_interrupt(&frame);
+        };
+        if InterruptType::SOFT.mask() & mask > 0 {
+            __soft_interrupt(&frame);
+            __soft_hal_interrupt(&frame);
+        };
+        if InterruptType::WDT.mask() & mask > 0 {
+            __wdt_interrupt(&frame);
+            __wdt_hal_interrupt(&frame);
+        };
+        if InterruptType::TIMER1.mask() & mask > 0 {
+            __timer1_interrupt(&frame);
+            __timer1_hal_interrupt(&frame);
+        };
+    }
 }
 
 pub fn enable_interrupt(ty: InterruptType) -> u32 {
@@ -122,7 +127,7 @@ macro_rules! int_handler {
 
         paste! {
             #[no_mangle]
-            fn [<__ $INT_TYPE:lower _interrupt>](_frame: &Context) {
+            fn [<__ $INT_TYPE:lower _hal_interrupt>](_frame: &Context) {
                 // this is safe because the drop impl for the handler cleans up the pointers
                 unsafe {
                     if let Some(trampoline) = paste!{[<INT_ $INT_TYPE _TRAMPOLINE>]} {

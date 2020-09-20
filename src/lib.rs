@@ -5,11 +5,11 @@ pub use esp8266 as target;
 pub use esp8266_hal_proc_macros::{interrupt, ram};
 
 #[cfg(feature = "rt")]
-pub use xtensa_lx_rt::entry;
+pub use xtensa_lx_rt::{entry, exception};
 
 #[cfg(all(feature = "rt", feature = "interrupt"))]
 #[macro_use]
-mod interrupt;
+pub mod interrupt;
 
 pub mod gpio;
 pub mod prelude;

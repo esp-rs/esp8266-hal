@@ -214,10 +214,11 @@ pub fn interrupt(args: TokenStream, input: TokenStream) -> TokenStream {
         syn::parse::<FnArg>(quote!(#[allow(non_snake_case)] #(#attrs)* #ident: &mut #ty).into())
             .unwrap()
     }));
+    let ident_type = Ident::new(&ident_s.to_string().to_ascii_uppercase(), ident_s.span());
     f.block.stmts = iter::once(
         syn::parse2(quote! {{
             // Check that this interrupt actually exists
-            interrupt::#ident_s;
+            ::esp8266_hal::interrupt::InterruptType::#ident_type;
         }})
         .unwrap(),
     )
@@ -250,7 +251,7 @@ pub fn interrupt(args: TokenStream, input: TokenStream) -> TokenStream {
 
     let (ref cfgs, ref attrs) = extract_cfgs(f.attrs.clone());
 
-    let export_name = ident_s.to_string();
+    let export_name = format!("__{}_interrupt", ident_s);
 
     quote!(
         #(#cfgs)*

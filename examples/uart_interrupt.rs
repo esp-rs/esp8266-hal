@@ -26,3 +26,11 @@ fn main() -> ! {
         led.toggle().unwrap();
     }
 }
+
+#[interrupt(uart)]
+fn uart() {
+    let dp = unsafe { Peripherals::steal() };
+    let pins = dp.GPIO.split();
+    let mut led = pins.gpio2.into_push_pull_output();
+    led.toggle().unwrap();
+}
