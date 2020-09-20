@@ -1,9 +1,9 @@
 #![no_std]
 #![no_main]
 
-use core::panic::PanicInfo;
 use esp8266_hal::prelude::*;
 use esp8266_hal::target::Peripherals;
+use panic_halt as _;
 
 #[entry]
 fn main() -> ! {
@@ -18,10 +18,4 @@ fn main() -> ! {
         timer1.delay_ms(500);
         led.toggle().unwrap();
     }
-}
-
-/// Basic panic handler - just loops
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
 }
