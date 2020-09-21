@@ -22,6 +22,7 @@ impl InterruptType {
 }
 
 extern "Rust" {
+    // interrupt handlers set by #[interrupt] macro
     fn __slc_interrupt(context: &Context);
     fn __spi_interrupt(context: &Context);
     fn __gpio_interrupt(context: &Context);
@@ -31,6 +32,7 @@ extern "Rust" {
     fn __wdt_interrupt(context: &Context);
     fn __timer1_interrupt(context: &Context);
 
+    // interrupt handlers for the hal to use
     fn __slc_hal_interrupt(context: &Context);
     fn __spi_hal_interrupt(context: &Context);
     fn __gpio_hal_interrupt(context: &Context);
@@ -113,6 +115,7 @@ pub(crate) trait Callable {
     fn call(&mut self);
 }
 
+/// Setup an interrupt handler accepting a closure
 macro_rules! int_handler {
     ($INT_TYPE:ident => $INT:ident($DATA:ty)) => {
         use paste::paste;
@@ -144,6 +147,9 @@ macro_rules! int_handler {
         }
 
         impl<F: FnMut(&mut $DATA)> $INT<F> {
+            /// Create interrupt handler that keeps the closure in scope and sets the static pointers
+            ///
+            /// returns the handler pinned to ensure that the pointers stay valid
             pub(crate) fn new(data: $DATA, closure: F) -> Pin<Self> {
                 enable_interrupt(InterruptType::$INT_TYPE);
 

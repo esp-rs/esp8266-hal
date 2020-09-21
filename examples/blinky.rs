@@ -7,7 +7,7 @@ use panic_halt as _;
 
 #[entry]
 fn main() -> ! {
-    let dp = unsafe { Peripherals::steal() };
+    let dp = Peripherals::take().unwrap();
     let pins = dp.GPIO.split();
     let mut led = pins.gpio2.into_push_pull_output();
     let (mut timer1, _) = dp.TIMER.timers();
@@ -15,7 +15,7 @@ fn main() -> ! {
     led.set_high().unwrap();
 
     loop {
-        timer1.delay_ms(500);
+        timer1.delay_ms(100);
         led.toggle().unwrap();
     }
 }

@@ -38,6 +38,12 @@ extern "C" {
 #[no_mangle]
 #[ram]
 pub unsafe extern "C" fn ESP8266Reset() -> ! {
+    // These symbols come from `memory.x`
+    extern "C" {
+        static mut _rtc_bss_start: u32;
+        static mut _rtc_bss_end: u32;
+    }
+
     // setup the flash memory mapping
     Cache_Read_Enable(0, 0, 0);
 
@@ -46,6 +52,9 @@ pub unsafe extern "C" fn ESP8266Reset() -> ! {
     use esp8266::Peripherals;
     let dp = Peripherals::steal();
     dp.RTCCNTL.rtc_control().set_crystal_frequency(CrystalFrequency::Crystal26MHz);
+
+    // Initialize RTC RAM
+    xtensa_lx_rt::zero_bss(&mut _rtc_bss_start, &mut _rtc_bss_end);
 
     // continue with default reset handler
     xtensa_lx_rt::Reset();

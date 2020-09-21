@@ -7,7 +7,7 @@ use panic_halt as _;
 
 #[entry]
 fn main() -> ! {
-    let dp = unsafe { Peripherals::steal() };
+    let dp = Peripherals::take().unwrap();
     let pins = dp.GPIO.split();
     let mut serial = dp.UART0.serial(pins.gpio1.into_uart(), pins.gpio3.into_uart());
 
