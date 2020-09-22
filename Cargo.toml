@@ -1,6 +1,6 @@
 [package]
 name = "esp8266-hal"
-version = "0.3.2"
+version = "0.4.0"
 authors = ["Robin Appelman <robin@icewind.nl>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"

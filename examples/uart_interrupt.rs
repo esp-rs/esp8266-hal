@@ -19,7 +19,7 @@ fn main() -> ! {
 
     led.set_high().unwrap();
 
-    (&LED).lock(|tx_locked| *tx_locked = Some(led));
+    (&LED).lock(|led_locked| *led_locked = Some(led));
 
     // returned handler needs to be assigned to a variable to keep it in scope
     let _handler = serial.attach_interrupt(|serial| {
