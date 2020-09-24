@@ -16,7 +16,7 @@ pub use crate::uart::{UART0Ext, UART1Ext};
 pub use crate::watchdog::WatchdogExt;
 pub use xtensa_lx_rt::{entry, exception};
 pub use esp8266_hal_proc_macros::{interrupt, ram};
-pub use crate::dport::DPortExt;
+pub use crate::efuse::DPortExt;
 pub use crate::rtccntl::RtcControlExt;
 
 pub use embedded_hal::digital::v2::InputPin as _;

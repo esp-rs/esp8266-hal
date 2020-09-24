@@ -19,13 +19,8 @@ pub mod time;
 pub mod timer;
 pub mod uart;
 pub mod watchdog;
-pub mod dport;
+pub mod efuse;
 pub mod rtccntl;
-
-extern "C" {
-    // todo: replace this with a rust implementation
-    fn Cache_Read_Enable(map: u8, p: u8, v: u8);
-}
 
 /// Function handling ESP8266 specific initialization
 /// then calls original Reset function
@@ -44,13 +39,12 @@ pub unsafe extern "C" fn ESP8266Reset() -> ! {
         static mut _rtc_bss_end: u32;
     }
 
-    // setup the flash memory mapping
-    Cache_Read_Enable(0, 0, 0);
-
     // configure the pll for the most common crystal frequency
     use rtccntl::{CrystalFrequency, RtcControlExt};
+    use spi::FlashCache;
     use esp8266::Peripherals;
-    let dp = Peripherals::steal();
+    let mut dp = Peripherals::steal();
+    dp.SPI0.cache_enable(0);
     dp.RTCCNTL.rtc_control().set_crystal_frequency(CrystalFrequency::Crystal26MHz);
 
     // Initialize RTC RAM

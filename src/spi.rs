@@ -1,6 +1,7 @@
 use crate::gpio::*;
+use crate::ram;
 use embedded_hal::spi::{FullDuplex, Mode, Phase, Polarity};
-use esp8266::{IO_MUX, SPI1};
+use esp8266::{IO_MUX, SPI1, SPI0, DPORT};
 use void::Void;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -164,3 +165,69 @@ impl FullDuplex<u8> for SPI1Master {
 impl embedded_hal::blocking::spi::write::Default<u8> for SPI1Master {}
 
 impl embedded_hal::blocking::spi::transfer::Default<u8> for SPI1Master {}
+
+pub trait FlashCache {
+    fn cache_enable(&mut self, mb: u8);
+    fn cache_disable(&mut self);
+
+    fn cache_pause(&mut self);
+    fn cache_resume(&mut self);
+}
+
+impl FlashCache for SPI0 {
+    #[ram]
+    fn cache_enable(&mut self, mb: u8) {
+        assert!(mb < 8, "only up to8mb can be mapped");
+        // flush any existing config
+        self.cache_disable();
+
+        let dport = unsafe { &*DPORT::ptr() };
+        let offset = mb % 2;
+        let block = mb / 2;
+        self.spi_ctrl.modify(|_, w| w.enable_ahb().set_bit());
+
+        let offset_bits = match offset {
+            0 => 0,
+            1 => 2,
+            _ => 1,
+        };
+        dport.spi_cache.modify(|_, w| unsafe {
+            w.offset().bits(offset_bits)
+                .block().bits(block)
+                .target().clear_bit()
+        });
+        dport.spi_cache_target.modify(|_, w| w.target1().set_bit());
+
+        while dport.spi_cache.read().cache_enable().bit_is_clear() {
+            // no idea why the sdk sets this in a loop
+            dport.spi_cache.modify(|_, w| w.cache_enable().set_bit());
+        }
+    }
+
+    fn cache_disable(&mut self) {
+        let dport = unsafe { &*DPORT::ptr() };
+        while dport.spi_cache.read().cache_enable().bit_is_set() {
+            // no idea why the sdk clears this in a loop
+            dport.spi_cache.modify(|_, w| w.cache_enable().clear_bit());
+        }
+        self.spi_ctrl.modify(|_, w| w.enable_ahb().clear_bit());
+        dport.spi_cache.modify(|_, w| w.cache_flush_start().clear_bit());
+        dport.spi_cache.modify(|_, w| w.cache_flush_start().set_bit());
+        while dport.spi_cache.read().cache_empty().bit_is_clear() {
+            // noop
+        }
+        dport.spi_cache.modify(|_, w| w.cache_flush_start().clear_bit());
+    }
+
+    fn cache_pause(&mut self) {
+        let dport = unsafe { &*DPORT::ptr() };
+        self.spi_ctrl.modify(|_, w| w.enable_ahb().clear_bit());
+        dport.spi_cache.modify(|_, w| w.cache_enable().clear_bit());
+    }
+
+    fn cache_resume(&mut self) {
+        let dport = unsafe { &*DPORT::ptr() };
+        self.spi_ctrl.modify(|_, w| w.enable_ahb().set_bit());
+        dport.spi_cache.modify(|_, w| w.cache_enable().set_bit());
+    }
+}

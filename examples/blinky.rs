@@ -15,7 +15,7 @@ fn main() -> ! {
     led.set_high().unwrap();
 
     loop {
-        timer1.delay_ms(100);
+        timer1.delay_ms(500);
         led.toggle().unwrap();
     }
 }

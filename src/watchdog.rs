@@ -1,6 +1,6 @@
 use crate::time::{Milliseconds, Seconds};
 use embedded_hal::watchdog::{Watchdog as WatchdogTrait, WatchdogDisable, WatchdogEnable};
-use esp8266::WATCHDOG;
+use esp8266::WDT;
 
 // based on the reverse engineering work done by mongoose-os
 // https://mongoose-os.com/blog/esp8266-watchdog-timer/
@@ -11,7 +11,7 @@ pub trait WatchdogExt {
     fn watchdog(self) -> Watchdog;
 }
 
-impl WatchdogExt for WATCHDOG {
+impl WatchdogExt for WDT {
     fn watchdog(self) -> Watchdog {
         Watchdog { watchdog: self }
     }
@@ -172,13 +172,13 @@ fn test_time_into_timeout_is_higher() {
 }
 
 pub struct Watchdog {
-    watchdog: WATCHDOG,
+    watchdog: WDT,
 }
 
 impl WatchdogTrait for Watchdog {
     fn feed(&mut self) {
         self.watchdog
-            .reset
+            .wdt_rst
             .write(|w| unsafe { w.bits(WATCHDOG_RESET_MAGIC) })
     }
 }
@@ -206,7 +206,7 @@ impl WatchdogEnable for Watchdog {
             return;
         }
 
-        self.watchdog.ctl.write(|w| {
+        self.watchdog.wdt_ctl.write(|w| {
             w.unknown_3()
                 .set_bit()
                 .unknown_4()
@@ -216,27 +216,27 @@ impl WatchdogEnable for Watchdog {
         });
 
         self.watchdog
-            .reload_stage0
+            .wdt_op
             .write(|w| unsafe { w.bits(period0 as u8 as u32) });
 
         if period1 == StageTimeout::StageDisabled {
             self.watchdog
-                .ctl
+                .wdt_ctl
                 .modify(|_, w| w.stage_1_disable().set_bit());
         } else {
             self.watchdog
-                .reload_stage1
+                .wdt_op_nd
                 .write(|w| unsafe { w.bits(period1 as u8 as u32) });
         }
 
         self.feed();
 
-        self.watchdog.ctl.modify(|_, w| w.enable().set_bit());
+        self.watchdog.wdt_ctl.modify(|_, w| w.enable().set_bit());
     }
 }
 
 impl WatchdogDisable for Watchdog {
     fn disable(&mut self) {
-        self.watchdog.ctl.modify(|_, w| w.enable().clear_bit());
+        self.watchdog.wdt_ctl.modify(|_, w| w.enable().clear_bit());
     }
 }

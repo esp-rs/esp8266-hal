@@ -90,5 +90,3 @@ PROVIDE(__ccompare_hal_interrupt = __default_interrupt);
 PROVIDE(__soft_hal_interrupt = __default_interrupt);
 PROVIDE(__wdt_hal_interrupt = __default_interrupt);
 PROVIDE(__timer1_hal_interrupt = __default_interrupt);
-
-PROVIDE ( Cache_Read_Enable = 0x40004678 );
