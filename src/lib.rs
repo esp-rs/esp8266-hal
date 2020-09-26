@@ -21,6 +21,7 @@ pub mod uart;
 pub mod watchdog;
 pub mod efuse;
 pub mod rtccntl;
+pub mod flash;
 
 /// Function handling ESP8266 specific initialization
 /// then calls original Reset function
@@ -41,10 +42,11 @@ pub unsafe extern "C" fn ESP8266Reset() -> ! {
 
     // configure the pll for the most common crystal frequency
     use rtccntl::{CrystalFrequency, RtcControlExt};
-    use spi::FlashCache;
     use esp8266::Peripherals;
     let mut dp = Peripherals::steal();
-    dp.SPI0.cache_enable(0);
+
+    flash::cache_enable(&mut dp.SPI0, 0);
+
     dp.RTCCNTL.rtc_control().set_crystal_frequency(CrystalFrequency::Crystal26MHz);
 
     // Initialize RTC RAM
