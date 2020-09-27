@@ -2,6 +2,18 @@ use crate::ram;
 use esp8266::{SPI0};
 use void::Void;
 
+pub trait SPI0Ext {
+    fn flash(self) -> ESPFlash;
+}
+
+impl SPI0Ext for SPI0 {
+    fn flash(self) -> ESPFlash {
+        ESPFlash {
+            spi: self
+        }
+    }
+}
+
 #[cfg(not(feature = "all_in_ram"))]
 mod cache;
 
@@ -46,12 +58,6 @@ pub(crate) use cache::{cache_enable};
 /// Access for the ESP8266 builtin flash
 pub struct ESPFlash {
     spi: SPI0,
-}
-
-impl ESPFlash {
-    pub fn new(spi: SPI0) -> Self {
-        ESPFlash { spi }
-    }
 }
 
 #[inline]
@@ -106,12 +112,12 @@ impl ESPFlash {
     }
 
     #[ram]
-    pub fn write_bytes(&mut self, addr: u32, data: &mut [u8]) -> Result<(), Void> {
+    pub fn write_bytes(&mut self, addr: u32, data: &[u8]) -> Result<(), Void> {
         let mut spi = CachePauseGuard::new(&mut self.spi);
-        write_enable(&mut spi);
 
         // todo 64 byte chunks
         for (i, byte) in data.iter().enumerate() {
+            write_enable(&mut spi);
             spi.spi_addr.write(|w| unsafe { w.address().bits(addr + i as u32).size().bits(1) });
             spi.spi_w0.write(|w| unsafe { w.bits(*byte as u32) });
             spi.spi_cmd.write(|w| w.spi_pp().set_bit());

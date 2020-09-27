@@ -5,7 +5,7 @@ use core::fmt::Write;
 use esp8266_hal::prelude::*;
 use esp8266_hal::target::Peripherals;
 use panic_halt as _;
-use esp8266_hal::flash::ESPFlash;
+use esp8266_hal::flash::{ESPFlash, SPI0Ext};
 
 #[entry]
 fn main() -> ! {
@@ -17,7 +17,7 @@ fn main() -> ! {
 
     led.set_high().unwrap();
 
-    let mut flash = ESPFlash::new(dp.SPI0);
+    let mut flash = dp.SPI0.flash();
 
     const ADDR: u32 = 0x7E000;
 
@@ -31,7 +31,7 @@ fn main() -> ! {
 
     flash.erase_sectors(ADDR, 1).unwrap();
 
-    flash.write_bytes(ADDR, &mut buff).unwrap();
+    flash.write_bytes(ADDR, &buff).unwrap();
 
     write!(serial, "\r\ncounter {}:\r\n", buff[0]).unwrap();
     write!(serial, "press '0' to reset:\r\n").unwrap();
