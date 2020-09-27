@@ -54,6 +54,7 @@ mod cache {
 
 use cache::CachePauseGuard;
 pub(crate) use cache::{cache_enable};
+use core::ptr::write_volatile;
 
 /// Access for the ESP8266 builtin flash
 pub struct ESPFlash {
@@ -112,20 +113,16 @@ impl ESPFlash {
     }
 
     #[ram]
-    pub fn write_bytes(&mut self, addr: u32, data: &[u8]) -> Result<(), Void> {
+    pub fn write_bytes(&mut self, mut addr: u32, data: &[u8]) -> Result<(), Void> {
         let mut spi = CachePauseGuard::new(&mut self.spi);
 
-        // todo 64 byte chunks
-        for (i, byte) in data.iter().enumerate() {
-            write_enable(&mut spi);
-            spi.spi_addr.write(|w| unsafe { w.address().bits(addr + i as u32).size().bits(1) });
-            spi.spi_w0.write(|w| unsafe { w.bits(*byte as u32) });
-            spi.spi_cmd.write(|w| w.spi_pp().set_bit());
+        let (head, body, tail) = unsafe { data.align_to::<u32>() };
 
-            while spi.spi_cmd.read().bits() > 0 {}
+        addr = write_unaligned(&mut spi, addr, head);
 
-            while get_status(&mut spi) & 1 > 0 {}
-        }
+        addr = write_aligned(&mut spi, addr, body);
+
+        write_unaligned(&mut spi, addr, tail);
 
         Ok(())
     }
@@ -145,4 +142,52 @@ impl ESPFlash {
 
         Ok(())
     }
+}
+
+
+#[ram]
+fn write_unaligned(spi: &mut SPI0, mut addr: u32, data: &[u8]) -> u32 {
+    for byte in data {
+        write_enable(spi);
+
+        spi.spi_addr.write(|w| unsafe { w.address().bits(addr).size().bits(1) });
+        spi.spi_w0.write(|w| unsafe { w.bits(*byte as u32) });
+        spi.spi_cmd.write(|w| w.spi_pp().set_bit());
+
+        while spi.spi_cmd.read().bits() > 0 {}
+
+        while get_status(spi) & 1 > 0 {}
+
+        addr += 1;
+    }
+
+    addr
+}
+
+#[ram]
+fn write_aligned(spi: &mut SPI0, mut addr: u32, data: &[u32]) -> u32 {
+    for chunk in data.chunks(16) {
+        write_enable(spi);
+
+        let byte_len = chunk.len() * 4;
+
+        spi.spi_addr.write(|w| unsafe { w.address().bits(addr).size().bits(byte_len as u8) });
+
+        let base = spi.spi_w0.as_ptr();
+        for (i, num) in chunk.iter().enumerate() {
+            unsafe {
+                write_volatile(base.add(i), *num);
+            }
+        }
+
+        spi.spi_cmd.write(|w| w.spi_pp().set_bit());
+
+        while spi.spi_cmd.read().bits() > 0 {}
+
+        while get_status(spi) & 1 > 0 {}
+
+        addr += byte_len as u32;
+    }
+
+    addr
 }
