@@ -54,7 +54,7 @@ mod cache {
 
 use cache::CachePauseGuard;
 pub(crate) use cache::{cache_enable};
-use core::ptr::write_volatile;
+use core::ptr::{write_volatile, read_volatile};
 
 /// Access for the ESP8266 builtin flash
 pub struct ESPFlash {
@@ -128,17 +128,16 @@ impl ESPFlash {
     }
 
     #[ram]
-    pub fn read(&mut self, addr: u32, buf: &mut [u8]) -> Result<(), Void> {
-        let spi = CachePauseGuard::new(&mut self.spi);
+    pub fn read(&mut self, mut addr: u32, buf: &mut [u8]) -> Result<(), Void> {
+        let mut spi = CachePauseGuard::new(&mut self.spi);
 
-        for (i, byte) in buf.iter_mut().enumerate() {
-            spi.spi_addr.write(|w| unsafe { w.address().bits(addr + i as u32).size().bits(1) });
-            spi.spi_cmd.write(|w| w.spi_read().set_bit());
+        let (head, body, tail) = unsafe { buf.align_to_mut::<u32>() };
 
-            while spi.spi_cmd.read().bits() > 0 {}
+        addr = read_unaligned(&mut spi, addr, head);
 
-            *byte = spi.spi_w0.read().bits() as u8;
-        }
+        addr = read_aligned(&mut spi, addr, body);
+
+        read_unaligned(&mut spi, addr, tail);
 
         Ok(())
     }
@@ -185,6 +184,47 @@ fn write_aligned(spi: &mut SPI0, mut addr: u32, data: &[u32]) -> u32 {
         while spi.spi_cmd.read().bits() > 0 {}
 
         while get_status(spi) & 1 > 0 {}
+
+        addr += byte_len as u32;
+    }
+
+    addr
+}
+
+
+#[ram]
+fn read_unaligned(spi: &mut SPI0, mut addr: u32, data: &mut [u8]) -> u32 {
+    for byte in data.iter_mut() {
+        spi.spi_addr.write(|w| unsafe { w.address().bits(addr).size().bits(1) });
+        spi.spi_cmd.write(|w| w.spi_read().set_bit());
+
+        while spi.spi_cmd.read().bits() > 0 {}
+
+        *byte = spi.spi_w0.read().bits() as u8;
+
+        addr += 1;
+    }
+
+    addr
+}
+
+#[ram]
+fn read_aligned(spi: &mut SPI0, mut addr: u32, data: &mut [u32]) -> u32 {
+    // the esp8266 hangs when trying to read the full 16 words for unknown reasons
+    for chunk in data.chunks_mut(15) {
+        let byte_len = chunk.len() * 4;
+
+        spi.spi_addr.write(|w| unsafe { w.address().bits(addr).size().bits(byte_len as u8) });
+        spi.spi_cmd.write(|w| w.spi_read().set_bit());
+
+        while spi.spi_cmd.read().bits() > 0 {}
+
+        let base = spi.spi_w0.as_ptr();
+        for (i, num) in chunk.iter_mut().enumerate() {
+            unsafe {
+                *num = read_volatile(base.add(i));
+            }
+        }
 
         addr += byte_len as u32;
     }
