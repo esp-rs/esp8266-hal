@@ -15,7 +15,7 @@ An example project using the crate can be found [here](https://github.com/icewin
 ```
 $ git clone https://github.com/MabezDev/rust-xtensa
 $ cd rust-xtensa
-$ ./configure --experimental-targets=Xtens
+$ ./configure --experimental-targets=Xtensa
 $ ./x.py build
 ```
 
