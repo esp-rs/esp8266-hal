@@ -1,6 +1,6 @@
 use crate::ram;
-use esp8266::{SPI0, DPORT};
 use core::ops::{Deref, DerefMut};
+use esp8266::{DPORT, SPI0};
 
 #[ram]
 pub(crate) fn cache_enable(spi0: &mut SPI0, mb: u8) {
@@ -17,9 +17,12 @@ pub(crate) fn cache_enable(spi0: &mut SPI0, mb: u8) {
         _ => 1,
     };
     dport.spi_cache.modify(|_, w| unsafe {
-        w.offset().bits(offset_bits)
-            .block().bits(block)
-            .target().clear_bit()
+        w.offset()
+            .bits(offset_bits)
+            .block()
+            .bits(block)
+            .target()
+            .clear_bit()
     });
     dport.spi_cache_target.modify(|_, w| w.target1().set_bit());
 
@@ -37,16 +40,22 @@ pub(crate) fn cache_disable(spi0: &mut SPI0) {
         dport.spi_cache.modify(|_, w| w.cache_enable().clear_bit());
     }
     spi0.spi_ctrl.modify(|_, w| w.enable_ahb().clear_bit());
-    dport.spi_cache.modify(|_, w| w.cache_flush_start().clear_bit());
-    dport.spi_cache.modify(|_, w| w.cache_flush_start().set_bit());
+    dport
+        .spi_cache
+        .modify(|_, w| w.cache_flush_start().clear_bit());
+    dport
+        .spi_cache
+        .modify(|_, w| w.cache_flush_start().set_bit());
     while dport.spi_cache.read().cache_empty().bit_is_clear() {
         // noop
     }
-    dport.spi_cache.modify(|_, w| w.cache_flush_start().clear_bit());
+    dport
+        .spi_cache
+        .modify(|_, w| w.cache_flush_start().clear_bit());
 }
 
 pub(super) struct CachePauseGuard<'a> {
-    spi: &'a mut SPI0
+    spi: &'a mut SPI0,
 }
 
 impl<'a> CachePauseGuard<'a> {

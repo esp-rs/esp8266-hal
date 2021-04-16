@@ -11,17 +11,17 @@ pub use xtensa_lx_rt::{entry, exception};
 #[macro_use]
 pub mod interrupt;
 
+pub mod efuse;
+pub mod flash;
 pub mod gpio;
 pub mod prelude;
 pub mod rng;
+pub mod rtccntl;
 pub mod spi;
 pub mod time;
 pub mod timer;
 pub mod uart;
 pub mod watchdog;
-pub mod efuse;
-pub mod rtccntl;
-pub mod flash;
 
 /// Function handling ESP8266 specific initialization
 /// then calls original Reset function
@@ -41,13 +41,15 @@ pub unsafe extern "C" fn ESP8266Reset() -> ! {
     }
 
     // configure the pll for the most common crystal frequency
-    use rtccntl::{CrystalFrequency, RtcControlExt};
     use esp8266::Peripherals;
+    use rtccntl::{CrystalFrequency, RtcControlExt};
     let mut dp = Peripherals::steal();
 
     flash::cache_enable(&mut dp.SPI0, 0);
 
-    dp.RTCCNTL.rtc_control().set_crystal_frequency(CrystalFrequency::Crystal26MHz);
+    dp.RTCCNTL
+        .rtc_control()
+        .set_crystal_frequency(CrystalFrequency::Crystal26MHz);
 
     // Initialize RTC RAM
     xtensa_lx_rt::zero_bss(&mut _rtc_bss_start, &mut _rtc_bss_end);

@@ -154,7 +154,6 @@ impl embedded_hal::blocking::serial::write::Default<u8> for UART0Serial {}
 
 impl embedded_hal::blocking::serial::write::Default<u8> for UART1Serial {}
 
-
 #[cfg(all(feature = "rt", feature = "interrupt"))]
 mod interrupt {
     use super::*;
@@ -163,7 +162,10 @@ mod interrupt {
 
     impl UART0Serial {
         #[must_use = "the interrupt handler must be kept in scope for the interrupt to be handled"]
-        pub fn attach_interrupt<F: FnMut(&mut UART0Serial)>(self, mut f: F) -> Pin<UartInterruptHandler<impl FnMut(&mut UART0Serial)>> {
+        pub fn attach_interrupt<F: FnMut(&mut UART0Serial)>(
+            self,
+            mut f: F,
+        ) -> Pin<UartInterruptHandler<impl FnMut(&mut UART0Serial)>> {
             UartInterruptHandler::new(self, move |serial: &mut UART0Serial| {
                 f(serial);
                 serial.uart.uart_int_clr.write(|w| unsafe { w.bits(0xff) });

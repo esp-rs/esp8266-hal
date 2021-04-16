@@ -1,7 +1,7 @@
+use crate::ram;
 use core::intrinsics::transmute;
 use xtensa_lx_rt::exception::Context;
 use xtensa_lx_rt::interrupt;
-use crate::ram;
 
 #[repr(u8)]
 pub enum InterruptType {
@@ -89,16 +89,12 @@ fn interrupt_trampoline(level: u32, frame: Context) {
 
 pub fn enable_interrupt(ty: InterruptType) -> u32 {
     let type_mask = ty.mask();
-    unsafe {
-        xtensa_lx::interrupt::enable_mask(type_mask)
-    }
+    unsafe { xtensa_lx::interrupt::enable_mask(type_mask) }
 }
 
 pub fn disable_interrupt(ty: InterruptType) -> u32 {
     let type_mask = !(1u32 << ty as u8);
-    unsafe {
-        xtensa_lx::interrupt::enable_mask(type_mask)
-    }
+    unsafe { xtensa_lx::interrupt::enable_mask(type_mask) }
 }
 
 /// Uses the magic of monomorphization to "save" the type parameter for our interrupt handler
@@ -118,12 +114,12 @@ pub(crate) trait Callable {
 /// Setup an interrupt handler accepting a closure
 macro_rules! int_handler {
     ($INT_TYPE:ident => $INT:ident($DATA:ty)) => {
-        use paste::paste;
-        use xtensa_lx_rt::exception::Context;
-        use core::pin::Pin;
+        use crate::interrupt::*;
         use core::intrinsics::transmute;
         use core::marker::PhantomPinned;
-        use crate::interrupt::*;
+        use core::pin::Pin;
+        use paste::paste;
+        use xtensa_lx_rt::exception::Context;
 
         paste! { static mut [<INT_ $INT_TYPE _TRAMPOLINE>]: Option<fn(handler: *mut ())> = None; }
         paste! { static mut [<INT_ $INT_TYPE _HANDLER>]: *mut () = core::ptr::null_mut(); }
@@ -161,8 +157,8 @@ macro_rules! int_handler {
                     })
                 };
                 unsafe {
-                    paste!{[<INT_ $INT_TYPE _TRAMPOLINE>] = Some(trampoline::<Self>) };
-                    paste!{[<INT_ $INT_TYPE _HANDLER>] = transmute(&handler) };
+                    paste! {[<INT_ $INT_TYPE _TRAMPOLINE>] = Some(trampoline::<Self>) };
+                    paste! {[<INT_ $INT_TYPE _HANDLER>] = transmute(&handler) };
                 }
                 handler
             }
@@ -176,11 +172,11 @@ macro_rules! int_handler {
 
         impl<F> Drop for $INT<F> {
             fn drop(&mut self) {
-                disable_interrupt(InterruptType:: $INT_TYPE);
+                disable_interrupt(InterruptType::$INT_TYPE);
 
                 unsafe {
-                    paste!{[<INT_ $INT_TYPE _TRAMPOLINE>] = None };
-                    paste!{[<INT_ $INT_TYPE _HANDLER>] = core::ptr::null_mut() };
+                    paste! {[<INT_ $INT_TYPE _TRAMPOLINE>] = None };
+                    paste! {[<INT_ $INT_TYPE _HANDLER>] = core::ptr::null_mut() };
                 }
             }
         }
@@ -198,5 +194,5 @@ macro_rules! int_handler {
                 &mut self.data
             }
         }
-    }
+    };
 }
