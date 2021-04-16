@@ -7,18 +7,18 @@
 //!
 //! This can be imported as use `esp8266_hal::prelude::*`.
 
+pub use crate::efuse::DPortExt;
+pub use crate::flash::SPI0Ext;
 pub use crate::gpio::GpioExt;
 pub use crate::rng::RngExt;
+pub use crate::rtccntl::RtcControlExt;
 pub use crate::spi::SPIExt;
 pub use crate::time::U32Ext;
 pub use crate::timer::TimerExt;
 pub use crate::uart::{UART0Ext, UART1Ext};
 pub use crate::watchdog::WatchdogExt;
-pub use xtensa_lx_rt::{entry, exception};
 pub use esp8266_hal_proc_macros::{interrupt, ram};
-pub use crate::efuse::DPortExt;
-pub use crate::rtccntl::RtcControlExt;
-pub use crate::flash::SPI0Ext;
+pub use xtensa_lx_rt::{entry, exception};
 
 pub use embedded_hal::digital::v2::InputPin as _;
 pub use embedded_hal::digital::v2::OutputPin as _;

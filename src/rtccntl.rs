@@ -6,9 +6,7 @@ pub trait RtcControlExt {
 
 impl RtcControlExt for RTCCNTL {
     fn rtc_control(self) -> RtcControl {
-        RtcControl {
-            rtc_control: self
-        }
+        RtcControl { rtc_control: self }
     }
 }
 
@@ -25,7 +23,7 @@ pub enum CrystalFrequency {
 }
 
 pub struct RtcControl {
-    rtc_control: RTCCNTL
+    rtc_control: RTCCNTL,
 }
 
 impl RtcControl {

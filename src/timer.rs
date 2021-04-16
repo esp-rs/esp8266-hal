@@ -118,7 +118,7 @@ macro_rules! impl_timer_delay {
                 self.delay_us(ms as u32 * 1_000);
             }
         }
-    }
+    };
 }
 
 impl Timer1 {

@@ -1,11 +1,11 @@
 #![no_std]
 #![no_main]
 
+use esp8266_hal::gpio::{Gpio2, Output, PushPull};
 use esp8266_hal::prelude::*;
 use esp8266_hal::target::Peripherals;
 use panic_halt as _;
 use xtensa_lx::mutex::{CriticalSectionMutex, Mutex};
-use esp8266_hal::gpio::{Gpio2, Output, PushPull};
 
 static LED: CriticalSectionMutex<Option<Gpio2<Output<PushPull>>>> = CriticalSectionMutex::new(None);
 
@@ -13,7 +13,9 @@ static LED: CriticalSectionMutex<Option<Gpio2<Output<PushPull>>>> = CriticalSect
 fn main() -> ! {
     let dp = Peripherals::take().unwrap();
     let pins = dp.GPIO.split();
-    let serial = dp.UART0.serial(pins.gpio1.into_uart(), pins.gpio3.into_uart());
+    let serial = dp
+        .UART0
+        .serial(pins.gpio1.into_uart(), pins.gpio3.into_uart());
     let mut led = pins.gpio2.into_push_pull_output();
     let (mut timer1, _) = dp.TIMER.timers();
 
