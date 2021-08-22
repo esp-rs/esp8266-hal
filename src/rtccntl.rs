@@ -14,10 +14,14 @@ impl RtcControlExt for RTCCNTL {
 const I2C_BLOCK: u8 = 0x67;
 
 // PLL config options for common crystal frequencies
-const CRYSTAL_26MHZ: (u8, u8) = (136, 145);
-const CRYSTAL_40MHZ: (u8, u8) = (8, 129);
+const CRYSTAL_12MHZ: (u8, u8) = (0x88, 0xA1);
+const CRYSTAL_24MHZ: (u8, u8) = (0x88, 0x71);
+const CRYSTAL_26MHZ: (u8, u8) = (0x88, 0x91);
+const CRYSTAL_40MHZ: (u8, u8) = (0x08, 0x81);
 
 pub enum CrystalFrequency {
+    Crystal12MHz,
+    Crystal24MHz,
     Crystal26MHz,
     Crystal40MHz,
 }
@@ -46,6 +50,14 @@ impl RtcControl {
     /// Configure the internal PLL for common crystal frequencies
     pub fn set_crystal_frequency(&mut self, crystal: CrystalFrequency) {
         match crystal {
+            CrystalFrequency::Crystal12MHz => {
+                self.write_pll_i2c(1, CRYSTAL_12MHZ.0);
+                self.write_pll_i2c(2, CRYSTAL_12MHZ.1);
+            }
+            CrystalFrequency::Crystal24MHz => {
+                self.write_pll_i2c(1, CRYSTAL_24MHZ.0);
+                self.write_pll_i2c(2, CRYSTAL_24MHZ.1);
+            }
             CrystalFrequency::Crystal26MHz => {
                 self.write_pll_i2c(1, CRYSTAL_26MHZ.0);
                 self.write_pll_i2c(2, CRYSTAL_26MHZ.1);
