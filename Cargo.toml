@@ -34,5 +34,4 @@ lto = true
 
 [dev-dependencies]
 panic-halt = "0.2"
-enc28j60 = { version = "0.3", git = "https://github.com/icewind1991/enc28j60", branch = "feat_smoltcp", features = ["smoltcp"] }
 smoltcp = { version = "0.7", default-features = false, features = ["ethernet", "proto-ipv4", "socket-raw", "socket-udp", "socket-tcp", "socket-icmp"] }

@@ -2,7 +2,7 @@
 #![no_main]
 
 use core::fmt::Write;
-use esp8266_hal::flash::{ESPFlash, SPI0Ext};
+use esp8266_hal::flash::SPI0Ext;
 use esp8266_hal::prelude::*;
 use esp8266_hal::target::Peripherals;
 use panic_halt as _;
