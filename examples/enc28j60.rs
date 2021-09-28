@@ -28,7 +28,7 @@ use esp8266_hal::target::Peripherals;
 use panic_halt as _;
 use smoltcp::iface::{EthernetInterfaceBuilder, NeighborCache};
 use smoltcp::socket::{SocketSet, TcpSocket, TcpSocketBuffer};
-use smoltcp::time::{Instant};
+use smoltcp::time::Instant;
 use smoltcp::wire;
 use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr, Ipv4Address};
 
@@ -85,7 +85,7 @@ fn main() -> ! {
             7 * KB,
             MAC.0,
         )
-            .unwrap()
+        .unwrap()
     };
 
     // LED on after initialization

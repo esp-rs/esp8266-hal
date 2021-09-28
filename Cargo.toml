@@ -10,7 +10,7 @@ readme = "README.md"
 
 [dependencies]
 embedded-hal = { version = "0.2", features = ["unproven"] }
-esp8266 = "0.3"
+esp8266 = "0.4"
 nb = "1"
 void = { version = "1", default-features = false }
 xtensa-lx-rt = { version = "0.7", optional = true, features = ["lx106"] }
@@ -27,6 +27,7 @@ interrupt = ["paste"]
 
 [profile.dev]
 lto = true
+opt-level = 1
 
 [profile.release]
 lto = true

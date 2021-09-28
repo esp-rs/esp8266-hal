@@ -61,7 +61,7 @@ impl SPI1Master {
             mosi,
         };
 
-        spi.spi.spi_ctrl.write_with_zero(|w| w);
+        unsafe { spi.spi.spi_ctrl.write_with_zero(|w| w) };
         spi.set_frequency(frequency);
         spi.spi.spi_user.write(|w| {
             w.spi_usr_mosi()
@@ -72,7 +72,7 @@ impl SPI1Master {
                 .set_bit()
         });
         spi.set_data_bits(8);
-        spi.spi.spi_ctrl1.write_with_zero(|w| w);
+        unsafe { spi.spi.spi_ctrl1.write_with_zero(|w| w) };
 
         spi
     }
@@ -108,21 +108,25 @@ impl SPI1Master {
             iomux
                 .io_mux_conf
                 .modify(|_, w| w.spi1_clk_equ_sys_clk().set_bit());
-            self.spi
-                .spi_clock
-                .write_with_zero(|w| w.spi_clk_equ_sysclk().set_bit());
+            unsafe {
+                self.spi
+                    .spi_clock
+                    .write_with_zero(|w| w.spi_clk_equ_sysclk().set_bit())
+            };
         } else {
             iomux
                 .io_mux_conf
                 .modify(|_, w| w.spi1_clk_equ_sys_clk().clear_bit());
-            self.spi.spi_clock.write_with_zero(|w| unsafe {
-                w.spi_clkcnt_n()
-                    .bits(frequency as u8 - 1)
-                    .spi_clkcnt_h()
-                    .bits((frequency as u8) / 2 - 1)
-                    .spi_clkcnt_l()
-                    .bits((frequency as u8 - 1) & 0x40)
-            });
+            unsafe {
+                self.spi.spi_clock.write_with_zero(|w| {
+                    w.spi_clkcnt_n()
+                        .bits(frequency as u8 - 1)
+                        .spi_clkcnt_h()
+                        .bits((frequency as u8) / 2 - 1)
+                        .spi_clkcnt_l()
+                        .bits((frequency as u8 - 1) & 0x40)
+                })
+            };
         }
     }
 
