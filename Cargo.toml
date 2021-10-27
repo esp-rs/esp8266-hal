@@ -26,12 +26,8 @@ all_in_ram = []
 interrupt = ["paste"]
 
 [profile.dev]
-lto = true
-opt-level = 1
-
-[profile.release]
-lto = true
+debug = true
 
 [dev-dependencies]
 panic-halt = "0.2"
-smoltcp = { version = "0.7", default-features = false, features = ["ethernet", "proto-ipv4", "socket-raw", "socket-udp", "socket-tcp", "socket-icmp"] }
+# smoltcp = { version = "0.7", default-features = false, features = ["ethernet", "proto-ipv4", "socket-raw", "socket-udp", "socket-tcp", "socket-icmp"] }
