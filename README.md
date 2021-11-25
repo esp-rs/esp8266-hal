@@ -10,42 +10,37 @@ An example project using the crate can be found [here](https://github.com/icewin
 
 ## Setting up the compiler
 
-- setup the [xtensa rust](https://github.com/MabezDev/rust-xtensa) compiler.
+In order to build Rust for the Xtensa architecture, you must use the [esp-rs/rust](https://github.com/esp-rs/rust) compiler fork.
 
-```
-$ git clone https://github.com/MabezDev/rust-xtensa
-$ cd rust-xtensa
-$ ./configure --experimental-targets=Xtensa
-$ ./x.py build
-```
+This can be installed via the installation scripts and pre-built artifacts found in the [esp-rs/rust-build](https://github.com/esp-rs/rust-build) repository. Alternatively, you can build and install the compiler from source.
 
-- link the custom rust build into rustup
+For more information relating to the Rust compiler fork please refer to the [Installing Rust](https://esp-rs.github.io/book/getting-started/installing-rust.html) section of [The Rust on ESP Book](https://esp-rs.github.io/book/).
 
-```
-$ rustup toolchain link xtensa /path/to/rust-xtensa/build/x86_64-unknown-linux-gnu/stage1
-```
+### Using the Installation Scripts
 
-- install the xtensa-lx106-elf toolchain from the [espressif web site](https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/linux-setup.html).
+#### Linux/macOS
 
-```
-$ mkdir ~/esp
-$ tar -xzf ~/Downloads/xtensa-lx106-elf-linux64-1.22.0-100-ge567ec7-5.2.0.tar.gz -C ~/esp
-$ PATH="$PATH:$HOME/esp/xtensa-lx106-elf/bin"
+```shell
+$ curl -LO https://raw.githubusercontent.com/esp-rs/rust-build/main/install-rust-toolchain.sh
+$ chmod +x install-rust-toolchain.sh
+$ ./install-rust-toolchain.sh
 ```
 
-- install cargo-espflash
+#### Windows
 
-```
-$ cargo install cargo-espflash
+```powershell
+PS> Invoke-WebRequest https://raw.githubusercontent.com/esp-rs/rust-build/main/Install-RustToolchain.ps1 -OutFile Install-RustToolchain.ps1
+PS> .\Install-RustToolchain.ps1
 ```
 
 ## Flashing the examples
 
-Once you have your rust compiler and toolchain bits setup you can flash the examples using
+Once you have the Rust compiler fork installed you can flash the examples using [cargo-espflash](https://github.com/esp-rs/espflash/tree/master/cargo-espflash):
 
+```shell
+$ cargo install cargo-espflash
+$ cargo espflash --release --example blinky /dev/ttyUSB0
 ```
-$ cargo +xtensa espflash --release --example blinky --tool cargo /dev/ttyUSB0
-``` 
 
 ## License
 
