@@ -1,0 +1,27 @@
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+  workflow_dispatch:
+
+name: CI
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check-xtensa:
+    name: Check the examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: esp-rs/xtensa-toolchain@v1.1
+        with:
+          default: true
+          ldproxy: false
+      - uses: Swatinem/rust-cache@v1
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --examples --target=xtensa-esp8266-none-elf -Zbuild-std=core
