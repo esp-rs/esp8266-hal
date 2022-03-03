@@ -8,15 +8,15 @@ fn main() {
     let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
     File::create(out.join("memory.x"))
         .unwrap()
-        .write_all(include_bytes!("memory.x"))
+        .write_all(include_bytes!("ld/memory.x"))
         .unwrap();
 
     File::create(out.join("alias.x"))
         .unwrap()
         .write_all(if cfg!(feature = "all_in_ram") {
-            include_bytes!("ram.x")
+            include_bytes!("ld/ram.x")
         } else {
-            include_bytes!("rom.x")
+            include_bytes!("ld/rom.x")
         })
         .unwrap();
 
