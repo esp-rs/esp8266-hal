@@ -2,36 +2,44 @@
 name = "esp8266-hal"
 version = "0.5.0"
 authors = ["Robin Appelman <robin@icewind.nl>"]
-edition = "2018"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "An experimental hardware abstraction layer for the esp8266"
 repository = "https://github.com/esp-rs/esp8266-hal"
-readme = "README.md"
 
 [dependencies]
 embedded-hal = { version = "0.2", features = ["unproven"] }
-esp8266 = "0.4"
-nb = "1"
-void = { version = "1", default-features = false }
-xtensa-lx-rt = { version = "0.7", optional = true, features = ["lx106"] }
-xtensa-lx = "0.4"
-paste = { version = "1", optional = true }
-esp8266-hal-proc-macros = { version = "=0.1", path = "procmacros" }
+esp8266 = "0.5"
+nb = "1.0"
+paste = { version = "1.0", optional = true }
+void = { version = "1.0", default-features = false }
+xtensa-lx = "0.6"
+xtensa-lx-rt = { version = "0.9", optional = true, features = ["esp8266"] }
+
+[dependencies.esp8266-hal-proc-macros]
+path = "procmacros"
+version = "=0.1"
+
+[dev-dependencies]
+panic-halt = "0.2"
 
 [features]
-default = ["rt", "interrupt"]
-rt = ["xtensa-lx-rt"]
-# Place program completely in RAM (needed when e.g. using only ROM bootloader, or for debugging).
-all_in_ram = []
+default = ["interrupt", "rt"]
 interrupt = ["paste"]
+rt = ["xtensa-lx-rt"]
+
+# Place program completely in RAM (needed when e.g. using only ROM bootloader,
+# or for debugging).
+all_in_ram = []
 
 [profile.dev]
 lto = true
 opt-level = 1
 
+# Workaround for linker errors when using lto with the dev profile:
+# https://github.com/rust-lang/compiler-builtins/issues/347
+[profile.dev.package.compiler_builtins]
+overflow-checks = false
+
 [profile.release]
 lto = true
-
-[dev-dependencies]
-panic-halt = "0.2"
-smoltcp = { version = "0.7", default-features = false, features = ["ethernet", "proto-ipv4", "socket-raw", "socket-udp", "socket-tcp", "socket-icmp"] }

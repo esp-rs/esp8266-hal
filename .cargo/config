@@ -1,7 +1,6 @@
 [target]
 runner = { default = "xtensa-lx106-elf-gdb -q -x openocd.gdb" }
 
-
 [build]
 rustflags = [
   "-C", "link-arg=-nostartfiles",
