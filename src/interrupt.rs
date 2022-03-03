@@ -1,7 +1,7 @@
-use crate::ram;
-use core::intrinsics::transmute;
 use xtensa_lx_rt::exception::Context;
 use xtensa_lx_rt::interrupt;
+
+use crate::ram;
 
 #[repr(u8)]
 pub enum InterruptType {
@@ -103,7 +103,7 @@ pub fn disable_interrupt(ty: InterruptType) -> u32 {
 /// for a monomorphized version of this function will "remember" it's function pointer,
 /// allowing us to cast the function pointer into a monomorphized interrupt handler.
 pub(crate) fn trampoline<H: Callable>(handler: *mut ()) {
-    let handler: &mut H = unsafe { transmute(handler) };
+    let handler: &mut H = unsafe { &mut *(handler as *mut H) };
     handler.call();
 }
 
