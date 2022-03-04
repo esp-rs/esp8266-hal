@@ -33,6 +33,18 @@ PS> Invoke-WebRequest https://raw.githubusercontent.com/esp-rs/rust-build/main/I
 PS> .\Install-RustToolchain.ps1
 ```
 
+### Rust with Podman
+
+Alternatively you might build the project in the container where image already contains pre-installed Rust and ESP-IDF.
+
+```
+$ podman run --device /dev/ttyUSB0 -it docker.io/espressif/idf-rust
+```
+This container is lacking the utilities for the ESP8266, but you can install them using these instructions inside the container:
+```
+$ apt update && apt install gcc-xtensa-lx106 binutils-xtensa-lx106
+```
+
 ## Flashing the examples
 
 Once you have the Rust compiler fork installed you can flash the examples using [cargo-espflash](https://github.com/esp-rs/espflash/tree/master/cargo-espflash):
