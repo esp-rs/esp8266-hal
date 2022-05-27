@@ -1,39 +1,55 @@
 [package]
-name = "esp8266-hal"
+name    = "esp8266-hal"
 version = "0.5.0"
-authors = ["Robin Appelman <robin@icewind.nl>"]
-edition = "2021"
-license = "MIT OR Apache-2.0"
-description = "An experimental hardware abstraction layer for the esp8266"
-repository = "https://github.com/esp-rs/esp8266-hal"
+authors = [
+    "Robin Appelman <robin@icewind.nl>",
+    "Jesse Braham <jesse@beta7.io>",
+]
+edition     = "2021"
+description = "HAL for ESP8266 microcontrollers"
+repository  = "https://github.com/esp-rs/esp8266-hal"
+license     = "MIT OR Apache-2.0"
+
+keywords = [
+    "embedded",
+    "embedded-hal",
+    "esp",
+    "esp8266",
+    "no-std",
+]
+categories = [
+    "embedded",
+    "hardware-support",
+    "no-std",
+]
 
 [dependencies]
 embedded-hal = { version = "0.2", features = ["unproven"] }
-esp8266 = "0.5"
-nb = "1.0"
-paste = { version = "1.0", optional = true }
-void = { version = "1.0", default-features = false }
-xtensa-lx = "0.6"
-xtensa-lx-rt = { version = "0.9", optional = true, features = ["esp8266"] }
+esp8266      = "0.6"
+nb           = "1.0"
+paste        = { version = "1.0",  optional = true }
+void         = { version = "1.0",  default-features = false }
+xtensa-lx    = { version = "0.7",  features = ["esp8266"] }
+xtensa-lx-rt = { version = "0.11", features = ["esp8266"], optional = true }
 
 [dependencies.esp8266-hal-proc-macros]
-path = "procmacros"
+path    = "procmacros"
 version = "=0.1"
 
 [dev-dependencies]
 panic-halt = "0.2"
 
 [features]
-default = ["interrupt", "rt"]
+default   = ["interrupt", "rt"]
 interrupt = ["paste"]
-rt = ["xtensa-lx-rt"]
+rt        = ["xtensa-lx-rt"]
 
 # Place program completely in RAM (needed when e.g. using only ROM bootloader,
 # or for debugging).
 all_in_ram = []
 
 [profile.dev]
-lto = true
+lto       = true
 opt-level = 1
 
 # Workaround for linker errors when using lto with the dev profile:
