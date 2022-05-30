@@ -1,8 +1,8 @@
 # esp8266-hal
 
-An experimental hardware abstraction layer for the [esp8266](https://en.wikipedia.org/wiki/ESP8266) written in Rust.
+> ⚠️ **NOTE** this HAL is now in maintenence mode. No further development is planned at this time, however PRs may still be accepted.
 
-Contributions are welcome :)
+An experimental hardware abstraction layer for the [ESP8266](https://en.wikipedia.org/wiki/ESP8266) written in Rust.
 
 Join in on the discussion: https://matrix.to/#/#esp-rs:matrix.org!
 
@@ -40,7 +40,9 @@ Alternatively you might build the project in the container where image already c
 ```
 $ podman run --device /dev/ttyUSB0 -it docker.io/espressif/idf-rust
 ```
+
 This container is lacking the utilities for the ESP8266, but you can install them using these instructions inside the container:
+
 ```
 $ apt update && apt install gcc-xtensa-lx106 binutils-xtensa-lx106
 ```
