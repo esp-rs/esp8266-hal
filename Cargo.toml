@@ -1,6 +1,6 @@
 [package]
 name    = "esp8266-hal"
-version = "0.5.0"
+version = "0.5.1"
 authors = [
     "Robin Appelman <robin@icewind.nl>",
     "Jesse Braham <jesse@beta7.io>",
@@ -30,7 +30,7 @@ nb           = "1.0"
 paste        = { version = "1.0",  optional = true }
 void         = { version = "1.0",  default-features = false }
 xtensa-lx    = { version = "0.7",  features = ["esp8266"] }
-xtensa-lx-rt = { version = "0.11", features = ["esp8266"], optional = true }
+xtensa-lx-rt = { version = "0.12", features = ["esp8266"], optional = true }
 
 [dependencies.esp8266-hal-proc-macros]
 path    = "procmacros"
