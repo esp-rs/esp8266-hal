@@ -18,6 +18,7 @@ pub use crate::timer::TimerExt;
 pub use crate::uart::{UART0Ext, UART1Ext};
 pub use crate::watchdog::WatchdogExt;
 pub use esp8266_hal_proc_macros::{interrupt, ram};
+#[cfg(feature = "rt")]
 pub use xtensa_lx_rt::{entry, exception};
 
 pub use embedded_hal::digital::v2::InputPin as _;
