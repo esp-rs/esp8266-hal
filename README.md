@@ -1,6 +1,6 @@
 # esp8266-hal
 
-> ⚠️ **NOTE** this HAL is now in maintenence mode. No further development is planned at this time, however PRs may still be accepted.
+> ⚠️ **NOTE** this HAL is deprecated, no further development is planned.
 
 An experimental hardware abstraction layer for the [ESP8266](https://en.wikipedia.org/wiki/ESP8266) written in Rust.
 

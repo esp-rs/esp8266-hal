@@ -1,35 +1,22 @@
 [package]
-name    = "esp8266-hal"
-version = "0.5.1"
-authors = [
-    "Robin Appelman <robin@icewind.nl>",
-    "Jesse Braham <jesse@beta7.io>",
-]
+name        = "esp8266-hal"
+version     = "0.5.1"
+authors     = ["Jesse Braham <jesse@beta7.io>", "Robin Appelman <robin@icewind.nl>"]
 edition     = "2021"
 description = "HAL for ESP8266 microcontrollers"
 repository  = "https://github.com/esp-rs/esp8266-hal"
 license     = "MIT OR Apache-2.0"
 
-keywords = [
-    "embedded",
-    "embedded-hal",
-    "esp",
-    "esp8266",
-    "no-std",
-]
-categories = [
-    "embedded",
-    "hardware-support",
-    "no-std",
-]
+keywords   = ["embedded", "embedded-hal", "esp", "esp8266", "no-std"]
+categories = ["embedded", "hardware-support", "no-std"]
 
 [dependencies]
 embedded-hal = { version = "0.2", features = ["unproven"] }
-esp8266      = "0.6"
+esp8266      = { version = "0.6", path = "./esp8266" }
 nb           = "1.0"
-paste        = { version = "1.0",  optional = true }
-void         = { version = "1.0",  default-features = false }
-xtensa-lx    = { version = "0.7",  features = ["esp8266"] }
+paste        = { version = "1.0", optional = true }
+void         = { version = "1.0", default-features = false }
+xtensa-lx    = { version = "0.7", features = ["esp8266"] }
 xtensa-lx-rt = { version = "0.12", features = ["esp8266"], optional = true }
 
 [dependencies.esp8266-hal-proc-macros]
